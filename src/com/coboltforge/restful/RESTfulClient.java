@@ -368,7 +368,7 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getString Success");
+				Log.i(TAG, "getString Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -428,7 +428,7 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getRawData Success");
+				Log.i(TAG, "getRawData Success for query " +url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -497,7 +497,7 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getJSON Success");
+				Log.i(TAG, "getJSON Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
