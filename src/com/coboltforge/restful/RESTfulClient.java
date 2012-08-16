@@ -171,7 +171,7 @@ public class RESTfulClient  {
 	}
 
 
-	private String sanitizeUrl(String url) {
+	public static String sanitizeUrl(String url) {
 		// eat up senseless blanks, would cause httpClient to hickup
 		url = url.replaceAll(" ", "");
 		// also, remove double shlashes except first pair
