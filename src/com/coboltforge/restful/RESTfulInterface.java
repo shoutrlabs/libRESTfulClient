@@ -20,5 +20,9 @@ public interface RESTfulInterface {
 	interface OnPostJSONCompleteListener {
 		public void onComplete(String returned);
 	}
+	
+	interface OnPostMultipartProgressListener {
+		public void onProgress(int percent);
+	}
 
 }
