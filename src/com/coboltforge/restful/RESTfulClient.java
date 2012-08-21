@@ -34,6 +34,8 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
+import com.coboltforge.restful.RESTfulInterface.OnPostMultipartProgressListener;
+
 import android.os.Handler;
 import android.util.Log;
 
@@ -80,7 +82,7 @@ public class RESTfulClient  {
 	public synchronized void getString(Handler h, String url, RESTfulInterface.OnGetStringCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing GETSTRING " + url);
 
 		CommThread.Task gs = commThread.new Task(CommThread.Task.MODE_GETSTRING);
@@ -89,8 +91,8 @@ public class RESTfulClient  {
 		gs.getStringCallback = callback;
 		commThread.addTask(gs);
 	}
-	
-	
+
+
 	/**
 	 * get raw binary data from url in a thread, callback will be executed on the main thread.
 	 * @param h
@@ -100,7 +102,7 @@ public class RESTfulClient  {
 	public synchronized void getRawData(Handler h, String url, RESTfulInterface.OnGetRawDataCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing GETRAWDATA " + url);
 
 		CommThread.Task grd = commThread.new Task(CommThread.Task.MODE_GETRAWDATA);
@@ -109,7 +111,7 @@ public class RESTfulClient  {
 		grd.getRawDataCallback = callback;
 		commThread.addTask(grd);
 	}
-	
+
 
 
 	/**
@@ -142,7 +144,7 @@ public class RESTfulClient  {
 	public synchronized void postJSON(Handler h, String url, JSONObject data, RESTfulInterface.OnPostJSONCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing POSTJSON " + url + " " + data.toString());
 
 		CommThread.Task pj = commThread.new Task(CommThread.Task.MODE_POSTJSON);
@@ -162,7 +164,7 @@ public class RESTfulClient  {
 	 * @param callback
 	 */
 	public synchronized void postMultipart(Handler h, String url, byte[] data, String mimeType, RESTfulInterface.OnPostMultipartProgressListener callback) {
-		
+
 		url = sanitizeUrl(url);
 
 		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + data);
@@ -175,7 +177,7 @@ public class RESTfulClient  {
 		pm.postMultipartCallback = callback;
 		commThread.addTask(pm);
 	}
-	
+
 
 	public synchronized void cancelAll() {
 
@@ -312,7 +314,7 @@ public class RESTfulClient  {
 							});
 						}
 						break;
-						
+
 					case Task.MODE_GETRAWDATA:
 						Log.d(TAG, "got GETRAWDATA " + currentTask.in_url);
 						currentTask.out_ba = getRawData(currentTask.in_url);
@@ -344,9 +346,9 @@ public class RESTfulClient  {
 							});
 						}
 						break;
-						
+
 					case Task.MODE_POSTMULTIPART:
-						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_ba.toString());
+						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_ba.toString() + " mime:" + currentTask.in_mime);
 						// here the callback is called from within the worker method
 						currentTask.out_string = postMultipart(currentTask.in_url, currentTask.in_ba, currentTask.in_mime, currentTask.postMultipartCallback);
 						break;
@@ -378,7 +380,7 @@ public class RESTfulClient  {
 		}
 
 
-		
+
 
 		private String getString(String url)
 		{
@@ -437,10 +439,10 @@ public class RESTfulClient  {
 
 			return null;
 		}
-		
-		
+
+
 		private byte[] getRawData(String url) {
-			
+
 			status = SC_OK;
 
 			Log.i(TAG, "getRawData on " +url);
@@ -471,32 +473,32 @@ public class RESTfulClient  {
 				if (entity != null) {
 
 					InputStream in = entity.getContent();
-					
-					 // Now that the InputStream is open, get the content length
-				    long contentLength = entity.getContentLength();
 
-				    // To avoid having to resize the array over and over and over as
-				    // bytes are written to the array, provide an accurate estimate of
-				    // the ultimate size of the byte array
-				    ByteArrayOutputStream out;
-				    if (contentLength != -1) {
-				        out = new ByteArrayOutputStream((int)contentLength);
-				    } else {
-				        out = new ByteArrayOutputStream(16384); // Pick some appropriate size
-				    }
+					// Now that the InputStream is open, get the content length
+					long contentLength = entity.getContentLength();
 
-				    byte[] buf = new byte[512];
-				    while (true) {
-				        int len = in.read(buf);
-				        if (len == -1) {
-				            break;
-				        }
-				        out.write(buf, 0, len);
-				    }
-				    in.close();
-				    out.close(); 
+					// To avoid having to resize the array over and over and over as
+					// bytes are written to the array, provide an accurate estimate of
+					// the ultimate size of the byte array
+					ByteArrayOutputStream out;
+					if (contentLength != -1) {
+						out = new ByteArrayOutputStream((int)contentLength);
+					} else {
+						out = new ByteArrayOutputStream(16384); // Pick some appropriate size
+					}
 
-				    return out.toByteArray();
+					byte[] buf = new byte[512];
+					while (true) {
+						int len = in.read(buf);
+						if (len == -1) {
+							break;
+						}
+						out.write(buf, 0, len);
+					}
+					in.close();
+					out.close(); 
+
+					return out.toByteArray();
 				}
 			}
 			catch (Exception e){
@@ -507,7 +509,7 @@ public class RESTfulClient  {
 			}
 
 			return null;
-			
+
 		}
 
 
@@ -608,16 +610,37 @@ public class RESTfulClient  {
 			return null;
 		}
 
-		
-		private String postMultipart(String url, byte[] data, String mimeType, RESTfulInterface.OnPostMultipartProgressListener callback) {
+
+		private String postMultipart(String url, final byte[] data, String mimeType, RESTfulInterface.OnPostMultipartProgressListener callback) {
 			status = SC_OK;
 			HttpPost httpPost = new HttpPost(url);
-			
 
-            MultipartEntity multipartEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);  
-            multipartEntity.addPart("RESTfulClientData", new ByteArrayBody(data, mimeType));
-            httpPost.setEntity(multipartEntity);
-			
+
+			CountingMultipartEntity multipartEntity = new CountingMultipartEntity(
+					HttpMultipartMode.BROWSER_COMPATIBLE,
+					new CountingMultipartEntity.ProgressListener() {
+						@Override
+						public void transferred(long num) {
+
+							// calculate percent of upload progress
+							final int percent = (int) (num / (data.length / 100));
+							
+							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+								// currentTask could be something other at time of runnable execution
+								final OnPostMultipartProgressListener pmc = currentTask.postMultipartCallback;
+								currentTask.callbackHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										pmc.onProgress(percent);
+									}
+								});
+							}
+						}
+					});
+
+			multipartEntity.addPart("RESTfulClientData", new ByteArrayBody(data, mimeType));
+			httpPost.setEntity(multipartEntity);
+
 
 			try {
 				HttpResponse response= httpClient.execute(httpPost);
@@ -642,7 +665,7 @@ public class RESTfulClient  {
 
 			return null;
 		}
-		
+
 
 	} // end workerthread
 
