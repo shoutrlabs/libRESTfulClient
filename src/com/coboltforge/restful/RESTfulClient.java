@@ -36,7 +36,6 @@ import org.json.JSONObject;
 import android.os.Handler;
 import android.util.Log;
 
-import com.coboltforge.restful.RESTfulInterface.OnPostMultipartProgressListener;
 
 public class RESTfulClient  {
 
@@ -76,7 +75,7 @@ public class RESTfulClient  {
 	 * get unformatted string from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback
+	 * @param callback Callback to invoke on completion. May NOT be null.
 	 */
 	public synchronized void getString(Handler h, String url, RESTfulInterface.OnGetStringCompleteListener callback) {
 
@@ -96,7 +95,7 @@ public class RESTfulClient  {
 	 * get raw binary data from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback
+	 * @param callback Callback to invoke on completion. May NOT be null.
 	 */
 	public synchronized void getRawData(Handler h, String url, RESTfulInterface.OnGetRawDataCompleteListener callback) {
 
@@ -117,7 +116,7 @@ public class RESTfulClient  {
 	 * get JSON from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback
+	 * @param callback Callback to invoke on completion. May NOT be null.
 	 */
 	public synchronized void getJSON(Handler h, String url, RESTfulInterface.OnGetJSONCompleteListener callback) {
 
@@ -138,7 +137,7 @@ public class RESTfulClient  {
 	 * @param h
 	 * @param url
 	 * @param data
-	 * @param callback
+	 * @param callback Callback to invoke on completion. May NOT be null.
 	 */
 	public synchronized void postJSON(Handler h, String url, JSONObject data, RESTfulInterface.OnPostJSONCompleteListener callback) {
 
@@ -158,11 +157,20 @@ public class RESTfulClient  {
 	 * Post the given byte array as multipart form data to the given url.	
 	 * @param h
 	 * @param url
-	 * @param data
+	 * @param is
 	 * @param mimeType MIME type of the given data.
-	 * @param callback
+	 * @param filename
+	 * @param progressCallback Callback to invoke on progress. May be null.
+	 * @param completeCallback Callback to invoke on completion. May be null.
 	 */
-	public synchronized void postMultipart(Handler h, String url, InputStream is, String mimeType, String filename, RESTfulInterface.OnPostMultipartProgressListener callback) {
+	public synchronized void postMultipart(
+			Handler h,
+			String url,
+			InputStream is,
+			String mimeType, 
+			String filename,
+			RESTfulInterface.OnPostMultipartProgressListener progressCallback,
+			RESTfulInterface.OnPostMultipartCompleteListener completeCallback) {
 
 		url = sanitizeUrl(url);
 
@@ -174,7 +182,8 @@ public class RESTfulClient  {
 		pm.in_mime = mimeType;
 		pm.in_filename = filename;
 		pm.callbackHandler = h;
-		pm.postMultipartCallback = callback;
+		pm.postMultipartProgressCallback = progressCallback;
+		pm.postMultipartCompleteCallback = completeCallback;
 		commThread.addTask(pm);
 	}
 
@@ -237,7 +246,9 @@ public class RESTfulClient  {
 			private RESTfulInterface.OnGetRawDataCompleteListener getRawDataCallback;
 			private RESTfulInterface.OnGetJSONCompleteListener getJSONCallback;
 			private RESTfulInterface.OnPostJSONCompleteListener postJSONCallback;
-			private RESTfulInterface.OnPostMultipartProgressListener postMultipartCallback;
+			private RESTfulInterface.OnPostMultipartProgressListener postMultipartProgressCallback;
+			private RESTfulInterface.OnPostMultipartCompleteListener postMultipartCompleteCallback;
+
 
 
 			public Task(int mode) {
@@ -351,7 +362,23 @@ public class RESTfulClient  {
 					case Task.MODE_POSTMULTIPART:
 						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_is.toString() + " mime:" + currentTask.in_mime);
 						// here the callback is called from within the worker method
-						currentTask.out_string = postMultipart(currentTask.in_url, currentTask.in_is, currentTask.in_mime, currentTask.in_filename, currentTask.postMultipartCallback);
+						currentTask.out_string = postMultipart(
+								currentTask.in_url,
+								currentTask.in_is,
+								currentTask.in_mime,
+								currentTask.in_filename,
+								currentTask.postMultipartProgressCallback);
+						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+							// currentTask could be something other at time of runnable execution
+							final RESTfulInterface.OnPostMultipartCompleteListener pmc = currentTask.postMultipartCompleteCallback;
+							if(pmc != null) // check for null
+								currentTask.callbackHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										pmc.onComplete();
+									}
+								});
+						}
 						break;
 
 					}
@@ -612,7 +639,7 @@ public class RESTfulClient  {
 		}
 
 
-		private String postMultipart(String url, InputStream is, String mimeType, String filename, RESTfulInterface.OnPostMultipartProgressListener callback) {
+		private String postMultipart(String url, InputStream is, String mimeType, String filename, final RESTfulInterface.OnPostMultipartProgressListener progressCallback) {
 			status = SC_OK;
 			HttpPost httpPost = new HttpPost(url);
 
@@ -624,14 +651,13 @@ public class RESTfulClient  {
 						public void transferred(final long num) {
 
 							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-								// currentTask could be something other at time of runnable execution
-								final OnPostMultipartProgressListener pmc = currentTask.postMultipartCallback;
-								currentTask.callbackHandler.post(new Runnable() {
-									@Override
-									public void run() {
-										pmc.onProgress(num);
-									}
-								});
+								if(progressCallback != null) // check for null
+									currentTask.callbackHandler.post(new Runnable() {
+										@Override
+										public void run() {
+											progressCallback.onProgress(num);
+										}
+									});
 							}
 						}
 					});

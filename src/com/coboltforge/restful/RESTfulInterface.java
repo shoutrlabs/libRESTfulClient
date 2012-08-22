@@ -21,8 +21,13 @@ public interface RESTfulInterface {
 		public void onComplete(String returned);
 	}
 	
+	
 	interface OnPostMultipartProgressListener {
 		public void onProgress(long sentBytes);
+	}
+	
+	interface OnPostMultipartCompleteListener {
+		public void onComplete();
 	}
 
 }
