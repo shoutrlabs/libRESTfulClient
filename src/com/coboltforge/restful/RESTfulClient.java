@@ -26,14 +26,17 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
-
 import android.os.Handler;
 import android.util.Log;
+
+import com.coboltforge.restful.RESTfulInterface.OnPostMultipartProgressListener;
 
 public class RESTfulClient  {
 
@@ -71,14 +74,14 @@ public class RESTfulClient  {
 
 	/**
 	 * get unformatted string from url in a thread, callback will be executed on the main thread.
-	 * 
+	 * @param h
 	 * @param url
 	 * @param callback
 	 */
 	public synchronized void getString(Handler h, String url, RESTfulInterface.OnGetStringCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing GETSTRING " + url);
 
 		CommThread.Task gs = commThread.new Task(CommThread.Task.MODE_GETSTRING);
@@ -87,18 +90,18 @@ public class RESTfulClient  {
 		gs.getStringCallback = callback;
 		commThread.addTask(gs);
 	}
-	
-	
+
+
 	/**
 	 * get raw binary data from url in a thread, callback will be executed on the main thread.
-	 * 
+	 * @param h
 	 * @param url
 	 * @param callback
 	 */
 	public synchronized void getRawData(Handler h, String url, RESTfulInterface.OnGetRawDataCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing GETRAWDATA " + url);
 
 		CommThread.Task grd = commThread.new Task(CommThread.Task.MODE_GETRAWDATA);
@@ -107,12 +110,12 @@ public class RESTfulClient  {
 		grd.getRawDataCallback = callback;
 		commThread.addTask(grd);
 	}
-	
+
 
 
 	/**
 	 * get JSON from url in a thread, callback will be executed on the main thread.
-	 * 
+	 * @param h
 	 * @param url
 	 * @param callback
 	 */
@@ -132,14 +135,15 @@ public class RESTfulClient  {
 
 	/**
 	 * post JSON to url in a thread, callback will be executed on the main thread.
-	 * 
+	 * @param h
 	 * @param url
+	 * @param data
 	 * @param callback
 	 */
 	public synchronized void postJSON(Handler h, String url, JSONObject data, RESTfulInterface.OnPostJSONCompleteListener callback) {
 
 		url = sanitizeUrl(url);
-		
+
 		Log.d(TAG, "queueing POSTJSON " + url + " " + data.toString());
 
 		CommThread.Task pj = commThread.new Task(CommThread.Task.MODE_POSTJSON);
@@ -148,6 +152,30 @@ public class RESTfulClient  {
 		pj.callbackHandler = h;
 		pj.postJSONCallback = callback;
 		commThread.addTask(pj);
+	}
+
+	/**
+	 * Post the given byte array as multipart form data to the given url.	
+	 * @param h
+	 * @param url
+	 * @param data
+	 * @param mimeType MIME type of the given data.
+	 * @param callback
+	 */
+	public synchronized void postMultipart(Handler h, String url, InputStream is, String mimeType, String filename, RESTfulInterface.OnPostMultipartProgressListener callback) {
+
+		url = sanitizeUrl(url);
+
+		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + is.toString());
+
+		CommThread.Task pm = commThread.new Task(CommThread.Task.MODE_POSTMULTIPART);
+		pm.in_url= url;
+		pm.in_is = is;
+		pm.in_mime = mimeType;
+		pm.in_filename = filename;
+		pm.callbackHandler = h;
+		pm.postMultipartCallback = callback;
+		commThread.addTask(pm);
 	}
 
 
@@ -171,7 +199,7 @@ public class RESTfulClient  {
 	}
 
 
-	private String sanitizeUrl(String url) {
+	public static String sanitizeUrl(String url) {
 		// eat up senseless blanks, would cause httpClient to hickup
 		url = url.replaceAll(" ", "");
 		// also, remove double shlashes except first pair
@@ -190,6 +218,7 @@ public class RESTfulClient  {
 			public final static int MODE_GETJSON = 1;
 			public final static int MODE_POSTJSON = 2;
 			public final static int MODE_GETRAWDATA = 3;
+			public final static int MODE_POSTMULTIPART = 4;
 			public final static int QUIT = 666;
 
 
@@ -200,11 +229,16 @@ public class RESTfulClient  {
 			private byte[] out_ba;
 			private JSONObject out_json;
 			private JSONObject in_json; // for POST
+			private InputStream in_is; // for POST
+			private String in_mime; // for POST
+			private String in_filename; // for POST
 			private Handler callbackHandler; // handler to post callbacks to
 			private RESTfulInterface.OnGetStringCompleteListener getStringCallback;
 			private RESTfulInterface.OnGetRawDataCompleteListener getRawDataCallback;
 			private RESTfulInterface.OnGetJSONCompleteListener getJSONCallback;
 			private RESTfulInterface.OnPostJSONCompleteListener postJSONCallback;
+			private RESTfulInterface.OnPostMultipartProgressListener postMultipartCallback;
+
 
 			public Task(int mode) {
 				this.mode = mode;
@@ -281,7 +315,7 @@ public class RESTfulClient  {
 							});
 						}
 						break;
-						
+
 					case Task.MODE_GETRAWDATA:
 						Log.d(TAG, "got GETRAWDATA " + currentTask.in_url);
 						currentTask.out_ba = getRawData(currentTask.in_url);
@@ -314,6 +348,12 @@ public class RESTfulClient  {
 						}
 						break;
 
+					case Task.MODE_POSTMULTIPART:
+						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_is.toString() + " mime:" + currentTask.in_mime);
+						// here the callback is called from within the worker method
+						currentTask.out_string = postMultipart(currentTask.in_url, currentTask.in_is, currentTask.in_mime, currentTask.in_filename, currentTask.postMultipartCallback);
+						break;
+
 					}
 				} catch (Exception e) {
 					//TODO tell caller
@@ -341,7 +381,7 @@ public class RESTfulClient  {
 		}
 
 
-		
+
 
 		private String getString(String url)
 		{
@@ -368,7 +408,7 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getString Success");
+				Log.i(TAG, "getString Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -400,10 +440,10 @@ public class RESTfulClient  {
 
 			return null;
 		}
-		
-		
+
+
 		private byte[] getRawData(String url) {
-			
+
 			status = SC_OK;
 
 			Log.i(TAG, "getRawData on " +url);
@@ -428,38 +468,38 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getRawData Success");
+				Log.i(TAG, "getRawData Success for query " +url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
 
 					InputStream in = entity.getContent();
-					
-					 // Now that the InputStream is open, get the content length
-				    long contentLength = entity.getContentLength();
 
-				    // To avoid having to resize the array over and over and over as
-				    // bytes are written to the array, provide an accurate estimate of
-				    // the ultimate size of the byte array
-				    ByteArrayOutputStream out;
-				    if (contentLength != -1) {
-				        out = new ByteArrayOutputStream((int)contentLength);
-				    } else {
-				        out = new ByteArrayOutputStream(16384); // Pick some appropriate size
-				    }
+					// Now that the InputStream is open, get the content length
+					long contentLength = entity.getContentLength();
 
-				    byte[] buf = new byte[512];
-				    while (true) {
-				        int len = in.read(buf);
-				        if (len == -1) {
-				            break;
-				        }
-				        out.write(buf, 0, len);
-				    }
-				    in.close();
-				    out.close(); 
+					// To avoid having to resize the array over and over and over as
+					// bytes are written to the array, provide an accurate estimate of
+					// the ultimate size of the byte array
+					ByteArrayOutputStream out;
+					if (contentLength != -1) {
+						out = new ByteArrayOutputStream((int)contentLength);
+					} else {
+						out = new ByteArrayOutputStream(16384); // Pick some appropriate size
+					}
 
-				    return out.toByteArray();
+					byte[] buf = new byte[512];
+					while (true) {
+						int len = in.read(buf);
+						if (len == -1) {
+							break;
+						}
+						out.write(buf, 0, len);
+					}
+					in.close();
+					out.close(); 
+
+					return out.toByteArray();
 				}
 			}
 			catch (Exception e){
@@ -470,7 +510,7 @@ public class RESTfulClient  {
 			}
 
 			return null;
-			
+
 		}
 
 
@@ -497,7 +537,7 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getJSON Success");
+				Log.i(TAG, "getJSON Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -556,6 +596,60 @@ public class RESTfulClient  {
 				ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 				response.getEntity().writeTo(ostream);
 				Log.i(TAG, "postJSON to:" + url + " , response: " + ostream.toString());
+
+				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
+					return ostream.toString();	
+			} 
+			catch (Exception e) {
+				status = SC_ERR;
+				e.printStackTrace();
+			}
+			finally {
+				httpPost.abort();
+			}
+
+			return null;
+		}
+
+
+		private String postMultipart(String url, InputStream is, String mimeType, String filename, RESTfulInterface.OnPostMultipartProgressListener callback) {
+			status = SC_OK;
+			HttpPost httpPost = new HttpPost(url);
+
+
+			CountingMultipartEntity multipartEntity = new CountingMultipartEntity(
+					HttpMultipartMode.BROWSER_COMPATIBLE,
+					new CountingMultipartEntity.ProgressListener() {
+						@Override
+						public void transferred(final long num) {
+
+							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+								// currentTask could be something other at time of runnable execution
+								final OnPostMultipartProgressListener pmc = currentTask.postMultipartCallback;
+								currentTask.callbackHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										pmc.onProgress(num);
+									}
+								});
+							}
+						}
+					});
+
+			multipartEntity.addPart("RESTfulClientData", new InputStreamBody(is, mimeType, filename));
+
+			httpPost.setEntity(multipartEntity);
+
+
+			try {
+				HttpResponse response= httpClient.execute(httpPost);
+
+				Log.i(TAG, "postMultipart to " + url + " , code: " + response.getStatusLine().getStatusCode());
+
+				// print response body in any case
+				ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+				response.getEntity().writeTo(ostream);
+				Log.i(TAG, "postMultipart to:" + url + " , response: " + ostream.toString());
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
 					return ostream.toString();	
