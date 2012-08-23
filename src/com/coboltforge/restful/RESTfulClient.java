@@ -459,7 +459,7 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Exception e){
-				e.printStackTrace();
+				Log.e(TAG, "getString error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -530,7 +530,7 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Exception e){
-				e.printStackTrace();
+				Log.e(TAG, "getRawData error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -588,7 +588,7 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Exception e){
-				e.printStackTrace();
+				Log.e(TAG, "getJSON error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -607,7 +607,7 @@ public class RESTfulClient  {
 			try {
 				se = new StringEntity(data.toString());
 			} catch (UnsupportedEncodingException e1) {
-				e1.printStackTrace();
+				Log.e(TAG, "postJSON error to " + url, e1);
 				status = SC_ERR;
 			}
 			httpPost.setEntity(se);
@@ -629,7 +629,7 @@ public class RESTfulClient  {
 			} 
 			catch (Exception e) {
 				status = SC_ERR;
-				e.printStackTrace();
+				Log.e(TAG, "postJSON error to " + url, e);
 			}
 			finally {
 				httpPost.abort();
@@ -682,7 +682,7 @@ public class RESTfulClient  {
 			} 
 			catch (Exception e) {
 				status = SC_ERR;
-				e.printStackTrace();
+				Log.e(TAG, "postMultipart error to " + url, e);
 			}
 			finally {
 				httpPost.abort();
