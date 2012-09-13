@@ -5,7 +5,8 @@
  * 
  * Copyright (C) 2012 CoboltForge
  * 
- * This is proprietary software, all rights reserved!
+ * This is proprietary software, all rights reserved! 
+ * You MUST contact hello@coboltforge.com if you want to use this software in your own product! 
  * 
  */
 
@@ -189,11 +190,11 @@ public class RESTfulClient  {
 
 
 	public synchronized void cancelAll() {
+		
+		Log.d(TAG, "Cancelling all operations");
 
 		// empty the task queue
 		commThread.mTaskQueue.clear();
-		// tell comm thread to bail out as next op
-		commThread.addTask(commThread.new Task(CommThread.Task.QUIT));
 		// disconnect callbacks of current task
 		try {
 			commThread.currentTask.postJSONCallback = null;
@@ -495,8 +496,6 @@ public class RESTfulClient  {
 					return null;
 				}
 
-				Log.i(TAG, "getRawData Success for query " +url);
-
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
 
@@ -504,6 +503,8 @@ public class RESTfulClient  {
 
 					// Now that the InputStream is open, get the content length
 					long contentLength = entity.getContentLength();
+					
+					long bytesRead = 0;
 
 					// To avoid having to resize the array over and over and over as
 					// bytes are written to the array, provide an accurate estimate of
@@ -522,10 +523,15 @@ public class RESTfulClient  {
 							break;
 						}
 						out.write(buf, 0, len);
+						bytesRead += len;
+						if(isInterrupted()) // stop reading if thread got a pending interrupt
+								break;
 					}
 					in.close();
 					out.close(); 
 
+					Log.i(TAG, "getRawData Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
+					
 					return out.toByteArray();
 				}
 			}
