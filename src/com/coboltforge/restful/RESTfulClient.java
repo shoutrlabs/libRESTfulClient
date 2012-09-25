@@ -76,7 +76,7 @@ public class RESTfulClient  {
 	 * get unformatted string from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback Callback to invoke on completion. May NOT be null.
+	 * @param callback Callback to invoke on completion. May be null.
 	 */
 	public synchronized void getString(Handler h, String url, RESTfulInterface.OnGetStringCompleteListener callback) {
 
@@ -96,7 +96,7 @@ public class RESTfulClient  {
 	 * get raw binary data from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback Callback to invoke on completion. May NOT be null.
+	 * @param callback Callback to invoke on completion. May be null.
 	 */
 	public synchronized void getRawData(Handler h, String url, RESTfulInterface.OnGetRawDataCompleteListener callback) {
 
@@ -117,7 +117,7 @@ public class RESTfulClient  {
 	 * get JSON from url in a thread, callback will be executed on the main thread.
 	 * @param h
 	 * @param url
-	 * @param callback Callback to invoke on completion. May NOT be null.
+	 * @param callback Callback to invoke on completion. May be null.
 	 */
 	public synchronized void getJSON(Handler h, String url, RESTfulInterface.OnGetJSONCompleteListener callback) {
 
@@ -138,7 +138,7 @@ public class RESTfulClient  {
 	 * @param h
 	 * @param url
 	 * @param data
-	 * @param callback Callback to invoke on completion. May NOT be null.
+	 * @param callback Callback to invoke on completion. May be null.
 	 */
 	public synchronized void postJSON(Handler h, String url, JSONObject data, RESTfulInterface.OnPostJSONCompleteListener callback) {
 
@@ -190,7 +190,7 @@ public class RESTfulClient  {
 
 
 	public synchronized void cancelAll() {
-		
+
 		Log.d(TAG, "Cancelling all operations");
 
 		// empty the task queue
@@ -306,7 +306,11 @@ public class RESTfulClient  {
 							currentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
-									gjc.onComplete(gjjo);
+									try{
+										gjc.onComplete(gjjo);
+									}
+									catch(NullPointerException e) {
+									}
 								}
 							});
 						}
@@ -322,7 +326,11 @@ public class RESTfulClient  {
 							currentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
-									gsc.onComplete(gss);
+									try {
+										gsc.onComplete(gss);
+									}
+									catch(NullPointerException e) {
+									}
 								}
 							});
 						}
@@ -338,7 +346,11 @@ public class RESTfulClient  {
 							currentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
-									grdc.onComplete(grdba);
+									try{
+										grdc.onComplete(grdba);
+									}
+									catch(NullPointerException e) {
+									}
 								}
 							});
 						}
@@ -354,7 +366,11 @@ public class RESTfulClient  {
 							currentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
-									pjc.onComplete(pjs);
+									try {
+										pjc.onComplete(pjs);
+									}
+									catch(NullPointerException e) {
+									}
 								}
 							});
 						}
@@ -376,7 +392,11 @@ public class RESTfulClient  {
 								currentTask.callbackHandler.post(new Runnable() {
 									@Override
 									public void run() {
-										pmc.onComplete();
+										try {
+											pmc.onComplete();
+										}
+										catch(NullPointerException e) {
+										}
 									}
 								});
 						}
@@ -503,7 +523,7 @@ public class RESTfulClient  {
 
 					// Now that the InputStream is open, get the content length
 					long contentLength = entity.getContentLength();
-					
+
 					long bytesRead = 0;
 
 					// To avoid having to resize the array over and over and over as
@@ -525,13 +545,13 @@ public class RESTfulClient  {
 						out.write(buf, 0, len);
 						bytesRead += len;
 						if(isInterrupted()) // stop reading if thread got a pending interrupt
-								break;
+							break;
 					}
 					in.close();
 					out.close(); 
 
 					Log.i(TAG, "getRawData Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
-					
+
 					return out.toByteArray();
 				}
 			}
