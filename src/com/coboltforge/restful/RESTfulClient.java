@@ -1,13 +1,13 @@
 /**
  * A threaded REST client implementation.
- * 
- * @author Christian Beier 
- * 
+ *
+ * @author Christian Beier
+ *
  * Copyright (C) 2012 CoboltForge
- * 
- * This is proprietary software, all rights reserved! 
- * You MUST contact hello@coboltforge.com if you want to use this software in your own product! 
- * 
+ *
+ * This is proprietary software, all rights reserved!
+ * You MUST contact hello@coboltforge.com if you want to use this software in your own product!
+ *
  */
 
 package com.coboltforge.restful;
@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.security.KeyStore;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.http.HttpEntity;
@@ -26,21 +27,26 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
 
 public class RESTfulClient  {
 
-	private final String TAG="RESTfulClient";  
+	private final String TAG="RESTfulClient";
 	private DefaultHttpClient httpClient; //only accessed by commThread
 	private CommThread commThread;
 	public final int SC_OK = 42;
@@ -61,6 +67,22 @@ public class RESTfulClient  {
 		httpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
 				new UsernamePasswordCredentials(user, pass));
 	}
+
+	public RESTfulClient (Context ctx, int bksResource, String pass) {
+
+		final SchemeRegistry schemeRegistry = new SchemeRegistry();
+		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		schemeRegistry.register(new Scheme("https", createAdditionalCertsSSLSocketFactory(ctx, bksResource, pass), 443));
+
+		// create connection manager using scheme, we use ThreadSafeClientConnManager
+		final HttpParams params = new BasicHttpParams();
+		final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params,schemeRegistry);
+		httpClient = new DefaultHttpClient(cm, params);
+
+		commThread = new CommThread();
+		commThread.start();
+	}
+
 
 
 
@@ -155,7 +177,7 @@ public class RESTfulClient  {
 	}
 
 	/**
-	 * Post the given byte array as multipart form data to the given url.	
+	 * Post the given byte array as multipart form data to the given url.
 	 * @param h
 	 * @param url
 	 * @param is
@@ -168,7 +190,7 @@ public class RESTfulClient  {
 			Handler h,
 			String url,
 			InputStream is,
-			String mimeType, 
+			String mimeType,
 			String filename,
 			RESTfulInterface.OnPostMultipartProgressListener progressCallback,
 			RESTfulInterface.OnPostMultipartCompleteListener completeCallback) {
@@ -548,7 +570,7 @@ public class RESTfulClient  {
 							break;
 					}
 					in.close();
-					out.close(); 
+					out.close();
 
 					Log.i(TAG, "getRawData Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
 
@@ -651,8 +673,8 @@ public class RESTfulClient  {
 				Log.i(TAG, "postJSON to:" + url + " , response: " + ostream.toString());
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-					return ostream.toString();	
-			} 
+					return ostream.toString();
+			}
 			catch (Exception e) {
 				status = SC_ERR;
 				Log.e(TAG, "postJSON error to " + url, e);
@@ -704,8 +726,8 @@ public class RESTfulClient  {
 				Log.i(TAG, "postMultipart to:" + url + " , response: " + ostream.toString());
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-					return ostream.toString();	
-			} 
+					return ostream.toString();
+			}
 			catch (Exception e) {
 				status = SC_ERR;
 				Log.e(TAG, "postMultipart error to " + url, e);
@@ -720,7 +742,24 @@ public class RESTfulClient  {
 
 	} // end workerthread
 
+	private org.apache.http.conn.ssl.SSLSocketFactory createAdditionalCertsSSLSocketFactory(Context ctx, int res, String pass) {
+	    try {
+	        final KeyStore ks = KeyStore.getInstance("BKS");
 
+	        // a bks file in res/raw
+	        final InputStream in = ctx.getResources().openRawResource(res);
+	        try {
+	            // don't forget to put the password used above in strings.xml/mystore_password
+	            ks.load(in, pass.toCharArray());
+	        } finally {
+	            in.close();
+	        }
 
+	        return new AdditionalKeyStoresSSLSocketFactory(ks);
+
+	    } catch( Exception e ) {
+	        throw new RuntimeException(e);
+	    }
+	}
 
 }

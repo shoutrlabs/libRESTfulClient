@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+#
+
+# have to use bcprov-jdk15on-146.jar as this is the version android is using!
+export CLASSPATH=bcprov-jdk15on-146.jar
+INFILE=$1
+CERTSTORE=$2
+PASS=$3
+if [ -a $CERTSTORE ]; then
+    rm $CERTSTORE || exit 1
+fi
+keytool \
+      -import \
+      -v \
+      -trustcacerts \
+      -alias 0 \
+      -file <(openssl x509 -in $INFILE) \
+      -keystore $CERTSTORE \
+      -storetype BKS \
+      -provider org.bouncycastle.jce.provider.BouncyCastleProvider \
+      -providerpath /usr/share/java/bcprov.jar \
+      -storepass $PASS
