@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.http.HttpEntity;
@@ -30,6 +31,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.content.InputStreamBody;
@@ -92,6 +94,16 @@ public class RESTfulClient  {
 		return status;
 	}
 
+
+	public final List<Cookie> getCookies()
+	{
+		try {
+			return httpClient.getCookieStore().getCookies();
+		}
+		catch(NullPointerException e) {
+			return null;
+		}
+	}
 
 
 	/**
