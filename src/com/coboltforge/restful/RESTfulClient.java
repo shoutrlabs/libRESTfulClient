@@ -26,6 +26,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -35,6 +36,7 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
@@ -54,32 +56,35 @@ public class RESTfulClient  {
 	public final int SC_OK = 42;
 	public final int SC_ERR = 666;
 	private int status = SC_OK;
-
+	private CookieStore cookieJar;
 
 
 	public RESTfulClient () {
-		HttpParams httpParams = new BasicHttpParams();
-		httpClient = new DefaultHttpClient(httpParams);
-		commThread = new CommThread();
-		commThread.start();
+		this(null, 0, null);
 	}
 
 	public RESTfulClient (String user, String pass) {
-		this();
+		this(null, 0, null);
 		httpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
 				new UsernamePasswordCredentials(user, pass));
 	}
 
 	public RESTfulClient (Context ctx, int bksResource, String pass) {
 
-		final SchemeRegistry schemeRegistry = new SchemeRegistry();
-		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-		schemeRegistry.register(new Scheme("https", createAdditionalCertsSSLSocketFactory(ctx, bksResource, pass), 443));
+		if(ctx == null || bksResource == 0 || pass == null) {
+			HttpParams httpParams = new BasicHttpParams();
+			httpClient = new DefaultHttpClient(httpParams);
+		}
+		else {
+			final SchemeRegistry schemeRegistry = new SchemeRegistry();
+			schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+			schemeRegistry.register(new Scheme("https", createAdditionalCertsSSLSocketFactory(ctx, bksResource, pass), 443));
 
-		// create connection manager using scheme, we use ThreadSafeClientConnManager
-		final HttpParams params = new BasicHttpParams();
-		final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params,schemeRegistry);
-		httpClient = new DefaultHttpClient(cm, params);
+			// create connection manager using scheme, we use ThreadSafeClientConnManager
+			final HttpParams params = new BasicHttpParams();
+			final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params,schemeRegistry);
+			httpClient = new DefaultHttpClient(cm, params);
+		}
 
 		commThread = new CommThread();
 		commThread.start();
