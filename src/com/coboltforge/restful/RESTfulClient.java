@@ -95,7 +95,7 @@ public class RESTfulClient  {
 	}
 
 
-	public final List<Cookie> getCookies()
+	public synchronized final List<Cookie> getCookies()
 	{
 		try {
 			return httpClient.getCookieStore().getCookies();
@@ -104,6 +104,7 @@ public class RESTfulClient  {
 			return null;
 		}
 	}
+
 
 
 	/**
@@ -332,6 +333,7 @@ public class RESTfulClient  {
 
 					case Task.MODE_GETJSON:
 						Log.d(TAG, "got GETJSON " + currentTask.in_url);
+						printCookies();
 						currentTask.out_json = getJSON(currentTask.in_url);
 						// currentTask could be something other at time of runnable execution
 						final RESTfulInterface.OnGetJSONCompleteListener gjc = currentTask.getJSONCallback;
@@ -352,6 +354,7 @@ public class RESTfulClient  {
 
 					case Task.MODE_GETSTRING:
 						Log.d(TAG, "got GETSTRING " + currentTask.in_url);
+						printCookies();
 						currentTask.out_string = getString(currentTask.in_url);
 						// currentTask could be something other at time of runnable execution
 						final RESTfulInterface.OnGetStringCompleteListener gsc = currentTask.getStringCallback;
@@ -372,6 +375,7 @@ public class RESTfulClient  {
 
 					case Task.MODE_GETRAWDATA:
 						Log.d(TAG, "got GETRAWDATA " + currentTask.in_url);
+						printCookies();
 						currentTask.out_ba = getRawData(currentTask.in_url);
 						// currentTask could be something other at time of runnable execution
 						final RESTfulInterface.OnGetRawDataCompleteListener grdc = currentTask.getRawDataCallback;
@@ -392,6 +396,7 @@ public class RESTfulClient  {
 
 					case Task.MODE_POSTJSON:
 						Log.d(TAG, "got POSTJSON " + currentTask.in_url + " " + currentTask.in_json.toString());
+						printCookies();
 						currentTask.out_string = postJSON(currentTask.in_url, currentTask.in_json);
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							// currentTask could be something other at time of runnable execution
@@ -412,6 +417,7 @@ public class RESTfulClient  {
 
 					case Task.MODE_POSTMULTIPART:
 						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_is.toString() + " mime:" + currentTask.in_mime);
+						printCookies();
 						// here the callback is called from within the worker method
 						currentTask.out_string = postMultipart(
 								currentTask.in_url,
@@ -450,6 +456,15 @@ public class RESTfulClient  {
 			Log.d(TAG, "Saying Goodbye");
 		}
 
+
+		private void printCookies() {
+			List<Cookie> cookies = getCookies();
+			if (cookies.isEmpty())
+				Log.d(TAG, "No Cookies");
+			else
+				for (Cookie c : cookies)
+					Log.d(TAG, "Cookie: " + c.toString());
+		}
 
 		public final ConcurrentLinkedQueue<Task> getQueue() {
 			return mTaskQueue;
