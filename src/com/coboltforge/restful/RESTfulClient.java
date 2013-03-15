@@ -191,7 +191,7 @@ public class RESTfulClient  {
 	}
 
 	/**
-	 * Post the given byte array as multipart form data to the given url.
+	 * Post the given input streams as multipart form data to the given url.
 	 * @param h
 	 * @param url
 	 * @param is
@@ -203,21 +203,21 @@ public class RESTfulClient  {
 	public synchronized void postMultipart(
 			Handler h,
 			String url,
-			InputStream is,
-			String mimeType,
-			String filename,
+			InputStream[] inStreams,
+			String[] mimeTypes,
+			String[] fileNames,
 			RESTfulInterface.OnPostMultipartProgressListener progressCallback,
 			RESTfulInterface.OnPostMultipartCompleteListener completeCallback) {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + is.toString());
+		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + inStreams.toString());
 
 		CommThread.Task pm = commThread.new Task(CommThread.Task.MODE_POSTMULTIPART);
 		pm.in_url= url;
-		pm.in_is = is;
-		pm.in_mime = mimeType;
-		pm.in_filename = filename;
+		pm.in_arr_is = inStreams;
+		pm.in_arr_mimetypes = mimeTypes;
+		pm.in_arr_filenames = fileNames;
 		pm.callbackHandler = h;
 		pm.postMultipartProgressCallback = progressCallback;
 		pm.postMultipartCompleteCallback = completeCallback;
@@ -274,10 +274,10 @@ public class RESTfulClient  {
 			private String out_string;
 			private byte[] out_ba;
 			private JSONObject out_json;
-			private JSONObject in_json; // for POST
-			private InputStream in_is; // for POST
-			private String in_mime; // for POST
-			private String in_filename; // for POST
+			private JSONObject in_json; // for POST JSON
+			private InputStream[] in_arr_is; // for POSTMULTIPART
+			private String[] in_arr_filenames; // for POSTMULTIPART
+			private String[] in_arr_mimetypes; // for POSTMULTIPART
 			private Handler callbackHandler; // handler to post callbacks to
 			private RESTfulInterface.OnGetStringCompleteListener getStringCallback;
 			private RESTfulInterface.OnGetRawDataCompleteListener getRawDataCallback;
@@ -417,14 +417,14 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_POSTMULTIPART:
-						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " " + currentTask.in_is.toString() + " mime:" + currentTask.in_mime);
+						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " count " + currentTask.in_arr_is.length);
 						printCookies();
 						// here the callback is called from within the worker method
 						currentTask.out_string = postMultipart(
 								currentTask.in_url,
-								currentTask.in_is,
-								currentTask.in_mime,
-								currentTask.in_filename,
+								currentTask.in_arr_is,
+								currentTask.in_arr_mimetypes,
+								currentTask.in_arr_filenames,
 								currentTask.postMultipartProgressCallback);
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							// currentTask could be something other at time of runnable execution
@@ -715,7 +715,7 @@ public class RESTfulClient  {
 		}
 
 
-		private String postMultipart(String url, InputStream is, String mimeType, String filename, final RESTfulInterface.OnPostMultipartProgressListener progressCallback) {
+		private String postMultipart(String url, InputStream[] inStreams, String[] mimeTypes, String[] filenames, final RESTfulInterface.OnPostMultipartProgressListener progressCallback) {
 			status = SC_OK;
 			HttpPost httpPost = new HttpPost(url);
 
@@ -738,7 +738,15 @@ public class RESTfulClient  {
 						}
 					});
 
-			multipartEntity.addPart("RESTfulClientData", new InputStreamBody(is, mimeType, filename));
+
+			for(int i=0; i<inStreams.length; ++i) {
+				InputStream is = inStreams[i];
+				// this assumes that all the arrays are of the same size, otherwise exception but WTF
+				String mimeType = mimeTypes[i];
+				String filename = filenames[i];
+				multipartEntity.addPart("RESTfulClientData" + i, new InputStreamBody(is, mimeType, filename));
+			}
+
 
 			httpPost.setEntity(multipartEntity);
 
