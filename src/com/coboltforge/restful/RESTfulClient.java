@@ -253,7 +253,7 @@ public class RESTfulClient  {
 	}
 
 
-	public class CommThread extends Thread {
+	private class CommThread extends Thread {
 
 		private static final String TAG = "RESTfulCommThread";
 		private Task currentTask;
