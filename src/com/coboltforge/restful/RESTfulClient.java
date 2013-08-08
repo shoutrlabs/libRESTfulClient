@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -246,10 +247,11 @@ public class RESTfulClient  {
 
 
 	public static String sanitizeUrl(String url) {
-		// eat up senseless blanks, would cause httpClient to hickup
-		url = url.replaceAll(" ", "");
-		// also, remove double shlashes except first pair
-		return url.replaceAll("(?<!:)//", "/");
+		try {
+			return URLEncoder.encode(url, "UTF-8").trim();
+		} catch (Exception e) {
+			return url;
+		}
 	}
 
 
