@@ -50,10 +50,12 @@ import android.util.Log;
 public class RESTfulClient  {
 
 	private final String TAG="RESTfulClient";
-	private DefaultHttpClient httpClient; //only accessed by commThread
-	private CommThread commThread;
-	public final int SC_OK = 42;
-	public final int SC_ERR = 666;
+	private DefaultHttpClient mHttpClient; //only accessed by commThread
+	private CommThread mCommThread;
+
+	public static final int SC_OK = 42;
+	public static final int SC_ERR = 666;
+
 	private int status = SC_OK;
 
 	public RESTfulClient () {
@@ -62,7 +64,7 @@ public class RESTfulClient  {
 
 	public RESTfulClient (String user, String pass) {
 		this(null, 0, null);
-		httpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+		mHttpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
 				new UsernamePasswordCredentials(user, pass));
 	}
 
@@ -70,7 +72,7 @@ public class RESTfulClient  {
 
 		if(ctx == null || bksResource == 0 || pass == null) {
 			HttpParams httpParams = new BasicHttpParams();
-			httpClient = new DefaultHttpClient(httpParams);
+			mHttpClient = new DefaultHttpClient(httpParams);
 		}
 		else {
 			final SchemeRegistry schemeRegistry = new SchemeRegistry();
@@ -80,11 +82,11 @@ public class RESTfulClient  {
 			// create connection manager using scheme, we use ThreadSafeClientConnManager
 			final HttpParams params = new BasicHttpParams();
 			final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params,schemeRegistry);
-			httpClient = new DefaultHttpClient(cm, params);
+			mHttpClient = new DefaultHttpClient(cm, params);
 		}
 
-		commThread = new CommThread();
-		commThread.start();
+		mCommThread = new CommThread();
+		mCommThread.start();
 	}
 
 
@@ -100,7 +102,7 @@ public class RESTfulClient  {
 	public synchronized final List<Cookie> getCookies()
 	{
 		try {
-			return httpClient.getCookieStore().getCookies();
+			return mHttpClient.getCookieStore().getCookies();
 		}
 		catch(NullPointerException e) {
 			return null;
@@ -121,11 +123,11 @@ public class RESTfulClient  {
 
 		Log.d(TAG, "queueing GETSTRING " + url);
 
-		CommThread.Task gs = commThread.new Task(CommThread.Task.MODE_GETSTRING);
+		CommThread.Task gs = mCommThread.new Task(CommThread.Task.MODE_GETSTRING);
 		gs.in_url= url;
 		gs.callbackHandler = h;
 		gs.getStringCallback = callback;
-		commThread.addTask(gs);
+		mCommThread.addTask(gs);
 	}
 
 
@@ -141,11 +143,11 @@ public class RESTfulClient  {
 
 		Log.d(TAG, "queueing GETRAWDATA " + url);
 
-		CommThread.Task grd = commThread.new Task(CommThread.Task.MODE_GETRAWDATA);
+		CommThread.Task grd = mCommThread.new Task(CommThread.Task.MODE_GETRAWDATA);
 		grd.in_url= url;
 		grd.callbackHandler = h;
 		grd.getRawDataCallback = callback;
-		commThread.addTask(grd);
+		mCommThread.addTask(grd);
 	}
 
 
@@ -162,11 +164,11 @@ public class RESTfulClient  {
 
 		Log.d(TAG, "queueing GETJSON " + url);
 
-		CommThread.Task gj = commThread.new Task(CommThread.Task.MODE_GETJSON);
+		CommThread.Task gj = mCommThread.new Task(CommThread.Task.MODE_GETJSON);
 		gj.in_url= url;
 		gj.callbackHandler = h;
 		gj.getJSONCallback = callback;
-		commThread.addTask(gj);
+		mCommThread.addTask(gj);
 	}
 
 
@@ -183,12 +185,12 @@ public class RESTfulClient  {
 
 		Log.d(TAG, "queueing POSTJSON " + url + " " + data.toString());
 
-		CommThread.Task pj = commThread.new Task(CommThread.Task.MODE_POSTJSON);
+		CommThread.Task pj = mCommThread.new Task(CommThread.Task.MODE_POSTJSON);
 		pj.in_url= url;
 		pj.in_json = data;
 		pj.callbackHandler = h;
 		pj.postJSONCallback = callback;
-		commThread.addTask(pj);
+		mCommThread.addTask(pj);
 	}
 
 	/**
@@ -214,7 +216,7 @@ public class RESTfulClient  {
 
 		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + inStreams.toString());
 
-		CommThread.Task pm = commThread.new Task(CommThread.Task.MODE_POSTMULTIPART);
+		CommThread.Task pm = mCommThread.new Task(CommThread.Task.MODE_POSTMULTIPART);
 		pm.in_url= url;
 		pm.in_arr_is = inStreams;
 		pm.in_arr_mimetypes = mimeTypes;
@@ -222,7 +224,7 @@ public class RESTfulClient  {
 		pm.callbackHandler = h;
 		pm.postMultipartProgressCallback = progressCallback;
 		pm.postMultipartCompleteCallback = completeCallback;
-		commThread.addTask(pm);
+		mCommThread.addTask(pm);
 	}
 
 
@@ -231,17 +233,17 @@ public class RESTfulClient  {
 		Log.d(TAG, "Cancelling all operations");
 
 		// empty the task queue
-		commThread.mTaskQueue.clear();
+		mCommThread.mTaskQueue.clear();
 		// disconnect callbacks of current task
 		try {
-			commThread.currentTask.postJSONCallback = null;
-			commThread.currentTask.getJSONCallback = null;
-			commThread.currentTask.getStringCallback = null;
+			mCommThread.mCurrentTask.postJSONCallback = null;
+			mCommThread.mCurrentTask.getJSONCallback = null;
+			mCommThread.mCurrentTask.getStringCallback = null;
 		}
 		catch(NullPointerException e) {
 		}
 		// and interrupt currently running op
-		commThread.interrupt();
+		mCommThread.interrupt();
 
 	}
 
@@ -274,7 +276,7 @@ public class RESTfulClient  {
 	private class CommThread extends Thread {
 
 		private static final String TAG = "RESTfulCommThread";
-		private Task currentTask;
+		private Task mCurrentTask;
 
 		public class Task {
 			// constants
@@ -325,10 +327,10 @@ public class RESTfulClient  {
 
 			boolean quit = false;
 			while(!quit) {
-				currentTask = mTaskQueue.peek();
+				mCurrentTask = mTaskQueue.peek();
 
 				// if queue empty, wait and re-run loop
-				if(currentTask==null) {
+				if(mCurrentTask==null) {
 					synchronized (mTaskQueue) {
 						try {
 							Log.d(TAG, "nothing to do, waiting...");
@@ -343,7 +345,7 @@ public class RESTfulClient  {
 
 				// there is something
 				try {
-					switch (currentTask.mode) {
+					switch (mCurrentTask.mode) {
 
 					case Task.QUIT:
 						Log.d(TAG, "got QUIT");
@@ -351,14 +353,14 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_GETJSON:
-						Log.d(TAG, "got GETJSON " + currentTask.in_url);
+						Log.d(TAG, "got GETJSON " + mCurrentTask.in_url);
 						printCookies();
-						currentTask.out_json = getJSON(currentTask.in_url);
+						mCurrentTask.out_json = getJSON(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
-						final RESTfulInterface.OnGetJSONCompleteListener gjc = currentTask.getJSONCallback;
-						final JSONObject gjjo = currentTask.out_json;
+						final RESTfulInterface.OnGetJSONCompleteListener gjc = mCurrentTask.getJSONCallback;
+						final JSONObject gjjo = mCurrentTask.out_json;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							currentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
 									try{
@@ -372,14 +374,14 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_GETSTRING:
-						Log.d(TAG, "got GETSTRING " + currentTask.in_url);
+						Log.d(TAG, "got GETSTRING " + mCurrentTask.in_url);
 						printCookies();
-						currentTask.out_string = getString(currentTask.in_url);
+						mCurrentTask.out_string = getString(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
-						final RESTfulInterface.OnGetStringCompleteListener gsc = currentTask.getStringCallback;
-						final String gss = currentTask.out_string;
+						final RESTfulInterface.OnGetStringCompleteListener gsc = mCurrentTask.getStringCallback;
+						final String gss = mCurrentTask.out_string;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							currentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
 									try {
@@ -393,14 +395,14 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_GETRAWDATA:
-						Log.d(TAG, "got GETRAWDATA " + currentTask.in_url);
+						Log.d(TAG, "got GETRAWDATA " + mCurrentTask.in_url);
 						printCookies();
-						currentTask.out_ba = getRawData(currentTask.in_url);
+						mCurrentTask.out_ba = getRawData(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
-						final RESTfulInterface.OnGetRawDataCompleteListener grdc = currentTask.getRawDataCallback;
-						final byte[] grdba = currentTask.out_ba;
+						final RESTfulInterface.OnGetRawDataCompleteListener grdc = mCurrentTask.getRawDataCallback;
+						final byte[] grdba = mCurrentTask.out_ba;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							currentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
 									try{
@@ -414,14 +416,14 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_POSTJSON:
-						Log.d(TAG, "got POSTJSON " + currentTask.in_url + " " + currentTask.in_json.toString());
+						Log.d(TAG, "got POSTJSON " + mCurrentTask.in_url + " " + mCurrentTask.in_json.toString());
 						printCookies();
-						currentTask.out_string = postJSON(currentTask.in_url, currentTask.in_json);
+						mCurrentTask.out_string = postJSON(mCurrentTask.in_url, mCurrentTask.in_json);
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							// currentTask could be something other at time of runnable execution
-							final RESTfulInterface.OnPostJSONCompleteListener pjc = currentTask.postJSONCallback;
-							final String pjs = currentTask.out_string;
-							currentTask.callbackHandler.post(new Runnable() {
+							final RESTfulInterface.OnPostJSONCompleteListener pjc = mCurrentTask.postJSONCallback;
+							final String pjs = mCurrentTask.out_string;
+							mCurrentTask.callbackHandler.post(new Runnable() {
 								@Override
 								public void run() {
 									try {
@@ -435,20 +437,20 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_POSTMULTIPART:
-						Log.d(TAG, "got POSTMULTIPART " + currentTask.in_url + " count " + currentTask.in_arr_is.length);
+						Log.d(TAG, "got POSTMULTIPART " + mCurrentTask.in_url + " count " + mCurrentTask.in_arr_is.length);
 						printCookies();
 						// here the callback is called from within the worker method
-						currentTask.out_string = postMultipart(
-								currentTask.in_url,
-								currentTask.in_arr_is,
-								currentTask.in_arr_mimetypes,
-								currentTask.in_arr_filenames,
-								currentTask.postMultipartProgressCallback);
+						mCurrentTask.out_string = postMultipart(
+								mCurrentTask.in_url,
+								mCurrentTask.in_arr_is,
+								mCurrentTask.in_arr_mimetypes,
+								mCurrentTask.in_arr_filenames,
+								mCurrentTask.postMultipartProgressCallback);
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							// currentTask could be something other at time of runnable execution
-							final RESTfulInterface.OnPostMultipartCompleteListener pmc = currentTask.postMultipartCompleteCallback;
+							final RESTfulInterface.OnPostMultipartCompleteListener pmc = mCurrentTask.postMultipartCompleteCallback;
 							if(pmc != null) // check for null
-								currentTask.callbackHandler.post(new Runnable() {
+								mCurrentTask.callbackHandler.post(new Runnable() {
 									@Override
 									public void run() {
 										try {
@@ -508,7 +510,7 @@ public class RESTfulClient  {
 			HttpGet httpGet = new HttpGet(url);
 
 			try {
-				HttpResponse response = httpClient.execute(httpGet);
+				HttpResponse response = mHttpClient.execute(httpGet);
 
 				if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
 					// we assume that the response body contains the error message
@@ -568,7 +570,7 @@ public class RESTfulClient  {
 			HttpGet httpGet = new HttpGet(url);
 
 			try {
-				HttpResponse response = httpClient.execute(httpGet);
+				HttpResponse response = mHttpClient.execute(httpGet);
 
 				if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
 					// we assume that the response body contains the error message
@@ -642,7 +644,7 @@ public class RESTfulClient  {
 			HttpGet httpGet = new HttpGet(url);
 
 			try {
-				HttpResponse response = httpClient.execute(httpGet);
+				HttpResponse response = mHttpClient.execute(httpGet);
 
 				if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
 					// we assume that the response body contains the error message
@@ -709,7 +711,7 @@ public class RESTfulClient  {
 			httpPost.setHeader("Content-type", "application/json");
 
 			try {
-				HttpResponse response= httpClient.execute(httpPost);
+				HttpResponse response= mHttpClient.execute(httpPost);
 
 				Log.i(TAG, "postJSON to " + url + " , code: " + response.getStatusLine().getStatusCode());
 
@@ -746,7 +748,7 @@ public class RESTfulClient  {
 
 							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 								if(progressCallback != null) // check for null
-									currentTask.callbackHandler.post(new Runnable() {
+									mCurrentTask.callbackHandler.post(new Runnable() {
 										@Override
 										public void run() {
 											progressCallback.onProgress(num);
@@ -770,7 +772,7 @@ public class RESTfulClient  {
 
 
 			try {
-				HttpResponse response= httpClient.execute(httpPost);
+				HttpResponse response= mHttpClient.execute(httpPost);
 
 				Log.i(TAG, "postMultipart to " + url + " , code: " + response.getStatusLine().getStatusCode());
 
