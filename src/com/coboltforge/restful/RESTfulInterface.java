@@ -43,7 +43,7 @@ public interface RESTfulInterface {
 	}
 
 	interface OnPostMultipartCompleteListener {
-		public void onComplete();
+		public void onComplete(String returned);
 	}
 
 }

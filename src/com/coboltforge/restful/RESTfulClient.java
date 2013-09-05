@@ -193,13 +193,15 @@ public class RESTfulClient  {
 		mCommThread.addTask(pj);
 	}
 
+
+
 	/**
 	 * Post the given input streams as multipart form data to the given url.
 	 * @param h
 	 * @param url
-	 * @param is
-	 * @param mimeType MIME type of the given data.
-	 * @param filename
+	 * @param inStreams
+	 * @param mimeTypes MIME type of the given data.
+	 * @param fileNames
 	 * @param progressCallback Callback to invoke on progress. May be null.
 	 * @param completeCallback Callback to invoke on completion. May be null.
 	 */
@@ -449,12 +451,13 @@ public class RESTfulClient  {
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							// currentTask could be something other at time of runnable execution
 							final RESTfulInterface.OnPostMultipartCompleteListener pmc = mCurrentTask.postMultipartCompleteCallback;
+							final String pmps = mCurrentTask.out_string;
 							if(pmc != null) // check for null
 								mCurrentTask.callbackHandler.post(new Runnable() {
 									@Override
 									public void run() {
 										try {
-											pmc.onComplete();
+											pmc.onComplete(pmps);
 										}
 										catch(NullPointerException e) {
 										}
