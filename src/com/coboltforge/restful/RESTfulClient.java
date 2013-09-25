@@ -53,22 +53,26 @@ public class RESTfulClient  {
 	private DefaultHttpClient mHttpClient; //only accessed by commThread
 	private CommThread mCommThread;
 
+	private boolean mDoLog;
+
 	public static final int SC_OK = 42;
 	public static final int SC_ERR = 666;
 
 	private int status = SC_OK;
 
 	public RESTfulClient () {
-		this(null, 0, null);
+		this(null, 0, null, true);
 	}
 
 	public RESTfulClient (String user, String pass) {
-		this(null, 0, null);
+		this(null, 0, null, true);
 		mHttpClient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
 				new UsernamePasswordCredentials(user, pass));
 	}
 
-	public RESTfulClient (Context ctx, int bksResource, String pass) {
+	public RESTfulClient (Context ctx, int bksResource, String pass, boolean doLog) {
+
+		mDoLog = doLog;
 
 		if(ctx == null || bksResource == 0 || pass == null) {
 			HttpParams httpParams = new BasicHttpParams();
@@ -121,7 +125,7 @@ public class RESTfulClient  {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing GETSTRING " + url);
+		if(mDoLog) Log.d(TAG, "queueing GETSTRING " + url);
 
 		CommThread.Task gs = mCommThread.new Task(CommThread.Task.MODE_GETSTRING);
 		gs.in_url= url;
@@ -141,7 +145,7 @@ public class RESTfulClient  {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing GETRAWDATA " + url);
+		if(mDoLog) Log.d(TAG, "queueing GETRAWDATA " + url);
 
 		CommThread.Task grd = mCommThread.new Task(CommThread.Task.MODE_GETRAWDATA);
 		grd.in_url= url;
@@ -162,7 +166,7 @@ public class RESTfulClient  {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing GETJSON " + url);
+		if(mDoLog) Log.d(TAG, "queueing GETJSON " + url);
 
 		CommThread.Task gj = mCommThread.new Task(CommThread.Task.MODE_GETJSON);
 		gj.in_url= url;
@@ -183,7 +187,7 @@ public class RESTfulClient  {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing POSTJSON " + url + " " + data.toString());
+		if(mDoLog) Log.d(TAG, "queueing POSTJSON " + url + " " + data.toString());
 
 		CommThread.Task pj = mCommThread.new Task(CommThread.Task.MODE_POSTJSON);
 		pj.in_url= url;
@@ -216,7 +220,7 @@ public class RESTfulClient  {
 
 		url = sanitizeUrl(url);
 
-		Log.d(TAG, "queueing POSTMULTIPART " + url + " " + inStreams.toString());
+		if(mDoLog) Log.d(TAG, "queueing POSTMULTIPART " + url + " " + inStreams.toString());
 
 		CommThread.Task pm = mCommThread.new Task(CommThread.Task.MODE_POSTMULTIPART);
 		pm.in_url= url;
@@ -232,7 +236,7 @@ public class RESTfulClient  {
 
 	public synchronized void cancelAll() {
 
-		Log.d(TAG, "Cancelling all operations");
+		if(mDoLog) Log.d(TAG, "Cancelling all operations");
 
 		// empty the task queue
 		mCommThread.mTaskQueue.clear();
@@ -325,7 +329,7 @@ public class RESTfulClient  {
 
 		public void run() {
 
-			Log.d(TAG, "Saying Hellooo!");
+			if(mDoLog) Log.d(TAG, "Saying Hellooo!");
 
 			boolean quit = false;
 			while(!quit) {
@@ -335,10 +339,10 @@ public class RESTfulClient  {
 				if(mCurrentTask==null) {
 					synchronized (mTaskQueue) {
 						try {
-							Log.d(TAG, "nothing to do, waiting...");
+							if(mDoLog) Log.d(TAG, "nothing to do, waiting...");
 							mTaskQueue.wait();
 						} catch (InterruptedException e) {
-							Log.d(TAG, "woke up!!");
+							if(mDoLog) Log.d(TAG, "woke up!!");
 						}
 					}
 					// get queue head
@@ -350,12 +354,12 @@ public class RESTfulClient  {
 					switch (mCurrentTask.mode) {
 
 					case Task.QUIT:
-						Log.d(TAG, "got QUIT");
+						if(mDoLog) Log.d(TAG, "got QUIT");
 						quit = true;
 						break;
 
 					case Task.MODE_GETJSON:
-						Log.d(TAG, "got GETJSON " + mCurrentTask.in_url);
+						if(mDoLog) Log.d(TAG, "got GETJSON " + mCurrentTask.in_url);
 						printCookies();
 						mCurrentTask.out_json = getJSON(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
@@ -376,7 +380,7 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_GETSTRING:
-						Log.d(TAG, "got GETSTRING " + mCurrentTask.in_url);
+						if(mDoLog) Log.d(TAG, "got GETSTRING " + mCurrentTask.in_url);
 						printCookies();
 						mCurrentTask.out_string = getString(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
@@ -397,7 +401,7 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_GETRAWDATA:
-						Log.d(TAG, "got GETRAWDATA " + mCurrentTask.in_url);
+						if(mDoLog) Log.d(TAG, "got GETRAWDATA " + mCurrentTask.in_url);
 						printCookies();
 						mCurrentTask.out_ba = getRawData(mCurrentTask.in_url);
 						// currentTask could be something other at time of runnable execution
@@ -418,7 +422,7 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_POSTJSON:
-						Log.d(TAG, "got POSTJSON " + mCurrentTask.in_url + " " + mCurrentTask.in_json.toString());
+						if(mDoLog) Log.d(TAG, "got POSTJSON " + mCurrentTask.in_url + " " + mCurrentTask.in_json.toString());
 						printCookies();
 						mCurrentTask.out_string = postJSON(mCurrentTask.in_url, mCurrentTask.in_json);
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
@@ -439,7 +443,7 @@ public class RESTfulClient  {
 						break;
 
 					case Task.MODE_POSTMULTIPART:
-						Log.d(TAG, "got POSTMULTIPART " + mCurrentTask.in_url + " count " + mCurrentTask.in_arr_is.length);
+						if(mDoLog) Log.d(TAG, "got POSTMULTIPART " + mCurrentTask.in_url + " count " + mCurrentTask.in_arr_is.length);
 						printCookies();
 						// here the callback is called from within the worker method
 						mCurrentTask.out_string = postMultipart(
@@ -477,17 +481,17 @@ public class RESTfulClient  {
 			}
 
 
-			Log.d(TAG, "Saying Goodbye");
+			if(mDoLog) Log.d(TAG, "Saying Goodbye");
 		}
 
 
 		private void printCookies() {
 			List<Cookie> cookies = getCookies();
 			if (cookies.isEmpty())
-				Log.d(TAG, "No Cookies");
+				if(mDoLog) Log.d(TAG, "No Cookies");
 			else
 				for (Cookie c : cookies)
-					Log.d(TAG, "Cookie: " + c.toString());
+					if(mDoLog) Log.d(TAG, "Cookie: " + c.toString());
 		}
 
 		public final ConcurrentLinkedQueue<Task> getQueue() {
@@ -508,7 +512,7 @@ public class RESTfulClient  {
 		{
 			status = SC_OK;
 
-			Log.i(TAG, "getString on " +url);
+			if(mDoLog) Log.i(TAG, "getString on " +url);
 
 			HttpGet httpGet = new HttpGet(url);
 
@@ -521,15 +525,15 @@ public class RESTfulClient  {
 					if(entity != null) {
 						ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 						response.getEntity().writeTo(ostream);
-						Log.e(TAG, "getString Error: " + ostream.toString());
+						if(mDoLog) Log.e(TAG, "getString Error: " + ostream.toString());
 					}
 					else
-						Log.e(TAG, "getString Error: Server did not give reason");
+						if(mDoLog) Log.e(TAG, "getString Error: Server did not give reason");
 
 					return null;
 				}
 
-				Log.i(TAG, "getString Success for query " + url);
+				if(mDoLog) Log.i(TAG, "getString Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -545,7 +549,7 @@ public class RESTfulClient  {
 
 					String result=sb.toString();
 
-					Log.i(TAG,result);
+					if(mDoLog) Log.i(TAG,result);
 
 					instream.close();
 
@@ -553,7 +557,7 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Exception e){
-				Log.e(TAG, "getString error for query " + url, e);
+				if(mDoLog) Log.e(TAG, "getString error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -567,7 +571,7 @@ public class RESTfulClient  {
 
 			status = SC_OK;
 
-			Log.i(TAG, "getRawData on " +url);
+			if(mDoLog) Log.i(TAG, "getRawData on " +url);
 
 
 			HttpGet httpGet = new HttpGet(url);
@@ -581,10 +585,10 @@ public class RESTfulClient  {
 					if(entity != null) {
 						ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 						response.getEntity().writeTo(ostream);
-						Log.e(TAG, "getRawData Error: " + ostream.toString());
+						if(mDoLog) Log.e(TAG, "getRawData Error: " + ostream.toString());
 					}
 					else
-						Log.e(TAG, "getRawData Error: Server did not give reason");
+						if(mDoLog) Log.e(TAG, "getRawData Error: Server did not give reason");
 
 					return null;
 				}
@@ -623,13 +627,13 @@ public class RESTfulClient  {
 					in.close();
 					out.close();
 
-					Log.i(TAG, "getRawData Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
+					if(mDoLog) Log.i(TAG, "getRawData Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
 
 					return out.toByteArray();
 				}
 			}
 			catch (Exception e){
-				Log.e(TAG, "getRawData error for query " + url, e);
+				if(mDoLog) Log.e(TAG, "getRawData error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -655,15 +659,15 @@ public class RESTfulClient  {
 					if(entity != null) {
 						ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 						response.getEntity().writeTo(ostream);
-						Log.e(TAG, "getJSON Error: " + ostream.toString());
+						if(mDoLog) Log.e(TAG, "getJSON Error: " + ostream.toString());
 					}
 					else
-						Log.e(TAG, "getJSON Error: Server did not give reason");
+						if(mDoLog) Log.e(TAG, "getJSON Error: Server did not give reason");
 
 					return null;
 				}
 
-				Log.i(TAG, "getJSON Success for query " + url);
+				if(mDoLog) Log.i(TAG, "getJSON Success for query " + url);
 
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -679,7 +683,7 @@ public class RESTfulClient  {
 
 					String result=sb.toString();
 
-					Log.i(TAG,result);
+					if(mDoLog) Log.i(TAG,result);
 
 					instream.close();
 
@@ -687,7 +691,7 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Exception e){
-				Log.e(TAG, "getJSON error for query " + url, e);
+				if(mDoLog) Log.e(TAG, "getJSON error for query " + url, e);
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
@@ -706,7 +710,7 @@ public class RESTfulClient  {
 			try {
 				se = new StringEntity(data.toString());
 			} catch (UnsupportedEncodingException e1) {
-				Log.e(TAG, "postJSON error to " + url, e1);
+				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e1);
 				status = SC_ERR;
 			}
 			httpPost.setEntity(se);
@@ -716,19 +720,19 @@ public class RESTfulClient  {
 			try {
 				HttpResponse response= mHttpClient.execute(httpPost);
 
-				Log.i(TAG, "postJSON to " + url + " , code: " + response.getStatusLine().getStatusCode());
+				if(mDoLog) Log.i(TAG, "postJSON to " + url + " , code: " + response.getStatusLine().getStatusCode());
 
 				// print response body in any case
 				ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 				response.getEntity().writeTo(ostream);
-				Log.i(TAG, "postJSON to:" + url + " , response: " + ostream.toString());
+				if(mDoLog) Log.i(TAG, "postJSON to:" + url + " , response: " + ostream.toString());
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
 					return ostream.toString();
 			}
 			catch (Exception e) {
 				status = SC_ERR;
-				Log.e(TAG, "postJSON error to " + url, e);
+				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e);
 			}
 			finally {
 				httpPost.abort();
@@ -777,19 +781,19 @@ public class RESTfulClient  {
 			try {
 				HttpResponse response= mHttpClient.execute(httpPost);
 
-				Log.i(TAG, "postMultipart to " + url + " , code: " + response.getStatusLine().getStatusCode());
+				if(mDoLog) Log.i(TAG, "postMultipart to " + url + " , code: " + response.getStatusLine().getStatusCode());
 
 				// print response body in any case
 				ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 				response.getEntity().writeTo(ostream);
-				Log.i(TAG, "postMultipart to:" + url + " , response: " + ostream.toString());
+				if(mDoLog) Log.i(TAG, "postMultipart to:" + url + " , response: " + ostream.toString());
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
 					return ostream.toString();
 			}
 			catch (Exception e) {
 				status = SC_ERR;
-				Log.e(TAG, "postMultipart error to " + url, e);
+				if(mDoLog) Log.e(TAG, "postMultipart error to " + url, e);
 			}
 			finally {
 				httpPost.abort();
