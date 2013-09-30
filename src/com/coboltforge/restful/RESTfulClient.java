@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -561,6 +562,7 @@ public class RESTfulClient  {
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -637,6 +639,7 @@ public class RESTfulClient  {
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -695,6 +698,7 @@ public class RESTfulClient  {
 				status = SC_ERR;
 			}finally{
 				httpGet.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -725,10 +729,14 @@ public class RESTfulClient  {
 				// print response body in any case
 				ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 				response.getEntity().writeTo(ostream);
-				if(mDoLog) Log.i(TAG, "postJSON to:" + url + " , response: " + ostream.toString());
+				String answer  =  ostream.toString();
+
+				ostream.close();
+
+				if(mDoLog) Log.i(TAG, "postJSON to:" + url + " , response: " + answer);
 
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-					return ostream.toString();
+					return answer;
 			}
 			catch (Exception e) {
 				status = SC_ERR;
@@ -736,6 +744,7 @@ public class RESTfulClient  {
 			}
 			finally {
 				httpPost.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -797,6 +806,7 @@ public class RESTfulClient  {
 			}
 			finally {
 				httpPost.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
