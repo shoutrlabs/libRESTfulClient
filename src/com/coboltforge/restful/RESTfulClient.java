@@ -557,7 +557,7 @@ public class RESTfulClient  {
 					return result;
 				}
 			}
-			catch (Exception e){
+			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getString error for query " + url, e);
 				status = SC_ERR;
 			}finally{
@@ -634,7 +634,7 @@ public class RESTfulClient  {
 					return out.toByteArray();
 				}
 			}
-			catch (Exception e){
+			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getRawData error for query " + url, e);
 				status = SC_ERR;
 			}finally{
@@ -693,7 +693,7 @@ public class RESTfulClient  {
 					return new JSONObject(result);
 				}
 			}
-			catch (Exception e){
+			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getJSON error for query " + url, e);
 				status = SC_ERR;
 			}finally{
@@ -738,7 +738,7 @@ public class RESTfulClient  {
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
 					return answer;
 			}
-			catch (Exception e) {
+			catch (Throwable e) {
 				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e);
 			}
@@ -800,7 +800,7 @@ public class RESTfulClient  {
 				if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
 					return ostream.toString();
 			}
-			catch (Exception e) {
+			catch (Throwable e) {
 				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postMultipart error to " + url, e);
 			}
