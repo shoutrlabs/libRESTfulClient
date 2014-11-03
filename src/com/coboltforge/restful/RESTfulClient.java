@@ -546,7 +546,7 @@ public class RESTfulClient  {
 					String line = null;
 
 					while ((line = reader.readLine()) != null)
-						sb.append(line);
+						sb.append(line + '\n');
 
 					String result=sb.toString();
 
