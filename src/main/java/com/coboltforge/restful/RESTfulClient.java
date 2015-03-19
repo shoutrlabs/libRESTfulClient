@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.util.List;
@@ -358,6 +359,21 @@ public class RESTfulClient  {
 
 				// there is something
 				try {
+
+                    /*
+                        On some Androids, ARP entries were not fully resolved,
+                        a manual ping solved this. So, work around and do this here as well.
+                        In a try-catch to no influence the rest...
+                      */
+                    try {
+                        URL netUrl = new URL(mCurrentTask.in_url);
+                        Runtime.getRuntime().exec("/system/bin/ping -w 1 -c 1 " + netUrl.getHost());
+                        Log.d(TAG, "Pinged " + netUrl.getHost());
+                    }
+                    catch(Exception e) {
+                    }
+
+
 					switch (mCurrentTask.mode) {
 
 					case Task.QUIT:
