@@ -334,21 +334,27 @@ public class RESTfulClient  {
 
 			boolean quit = false;
 			while(!quit) {
-				mCurrentTask = mTaskQueue.peek();
 
-				// if queue empty, wait and re-run loop
-				if(mCurrentTask==null) {
-					synchronized (mTaskQueue) {
-						try {
-							if(mDoLog) Log.d(TAG, "nothing to do, waiting...");
-							mTaskQueue.wait();
-						} catch (InterruptedException e) {
-							if(mDoLog) Log.d(TAG, "woke up!!");
-						}
-					}
-					// get queue head
-					continue;
-				}
+                synchronized (mTaskQueue) {
+
+                    mCurrentTask = mTaskQueue.peek();
+
+                    // if queue empty, wait and re-run loop
+                    if (mCurrentTask == null) {
+
+                        try {
+                            if (mDoLog) Log.d(TAG, "nothing to do, waiting...");
+                            mTaskQueue.wait(); // this releases the lock at puts the thread on the waiting list
+                        } catch (InterruptedException e) {
+                            if (mDoLog) Log.d(TAG, "woke up!!");
+                        }
+
+                        // get queue head
+                        continue;
+                    }
+
+                }
+
 
 				// there is something
 				try {
