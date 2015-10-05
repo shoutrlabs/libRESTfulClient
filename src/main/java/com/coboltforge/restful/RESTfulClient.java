@@ -14,6 +14,7 @@ package com.coboltforge.restful;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -156,6 +157,30 @@ public class RESTfulClient  {
 		grd.callbackHandler = h;
 		grd.getRawDataCallback = callback;
 		mCommThread.addTask(grd);
+	}
+
+
+
+	/**
+	 * save data from url to file in a thread, callback will be executed on the main thread.
+	 * @param h
+	 * @param url
+	*/
+	public synchronized void getFile(Handler h, String url, String filename,
+									 RESTfulInterface.OnGetFileProgressListener progressCallback,
+									 RESTfulInterface.OnGetFileCompleteListener completeCallback) {
+
+		url = sanitizeUrl(url);
+
+		if(mDoLog) Log.d(TAG, "queueing GETFILE " + url);
+
+		CommThread.Task gf = mCommThread.new Task(CommThread.Task.MODE_GETFILE);
+		gf.in_url= url;
+		gf.out_filename = filename;
+		gf.callbackHandler = h;
+		gf.getFileProgressCallback = progressCallback;
+		gf.getFileCompleteCallback = completeCallback;
+		mCommThread.addTask(gf);
 	}
 
 
@@ -317,6 +342,7 @@ public class RESTfulClient  {
 			public final static int MODE_POSTJSON = 2;
 			public final static int MODE_GETRAWDATA = 3;
 			public final static int MODE_POSTMULTIPART = 4;
+			public final static int MODE_GETFILE = 5;
 			public final static int QUIT = 666;
 
 
@@ -325,6 +351,7 @@ public class RESTfulClient  {
 			private String in_url;
 			private String out_string;
 			private byte[] out_ba;
+			private String out_filename;
 			private JSONObject out_json;
 			private JSONObject in_json; // for POST JSON
 			private InputStream[] in_arr_is; // for POSTMULTIPART
@@ -337,7 +364,8 @@ public class RESTfulClient  {
 			private RESTfulInterface.OnPostJSONCompleteListener postJSONCallback;
 			private RESTfulInterface.OnPostMultipartProgressListener postMultipartProgressCallback;
 			private RESTfulInterface.OnPostMultipartCompleteListener postMultipartCompleteCallback;
-
+			private RESTfulInterface.OnGetFileProgressListener getFileProgressCallback;
+			private RESTfulInterface.OnGetFileCompleteListener getFileCompleteCallback;
 
 
 			public Task(int mode) {
@@ -501,6 +529,33 @@ public class RESTfulClient  {
 								});
 						}
 						break;
+
+
+						case Task.MODE_GETFILE:
+							if(mDoLog) Log.d(TAG, "got getfile " + mCurrentTask.in_url + " to " + mCurrentTask.out_filename);
+							printCookies();
+							// here the callback is called from within the worker method
+							mCurrentTask.out_string = getFile(
+									mCurrentTask.in_url,
+									mCurrentTask.out_filename,
+									mCurrentTask.getFileProgressCallback);
+							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+								// currentTask could be something other at time of runnable execution
+								final RESTfulInterface.OnGetFileCompleteListener gfc = mCurrentTask.getFileCompleteCallback;
+								final String gfcs = mCurrentTask.out_string;
+								if(gfc != null) // check for null
+									mCurrentTask.callbackHandler.post(new Runnable() {
+										@Override
+										public void run() {
+											try {
+												gfc.onComplete(gfcs);
+											}
+											catch(NullPointerException e) {
+											}
+										}
+									});
+							}
+							break;
 
 					}
 				} catch (Exception e) {
@@ -676,6 +731,89 @@ public class RESTfulClient  {
 			return null;
 
 		}
+
+
+		private String getFile(String url, String filename, final RESTfulInterface.OnGetFileProgressListener progressCallback) {
+
+			status = SC_OK;
+
+			if(mDoLog) Log.i(TAG, "getFile on " +url);
+
+			HttpGet httpGet = new HttpGet(url);
+
+			try {
+				HttpResponse response = mHttpClient.execute(httpGet);
+
+				if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+					// we assume that the response body contains the error message
+					HttpEntity entity = response.getEntity();
+					if(entity != null) {
+						ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+						response.getEntity().writeTo(ostream);
+						if(mDoLog) Log.e(TAG, "getFile Error: " + ostream.toString());
+					}
+					else
+					if(mDoLog) Log.e(TAG, "getFile Error: Server did not give reason");
+
+					return null;
+				}
+
+				HttpEntity entity = response.getEntity();
+				if (entity != null) {
+
+					InputStream in = entity.getContent();
+
+					// Now that the InputStream is open, get the content length
+					long contentLength = entity.getContentLength();
+
+					long bytesRead = 0;
+
+					FileOutputStream out = new FileOutputStream(filename);
+
+					byte[] buf = new byte[8192];
+					while (true) {
+						int len = in.read(buf);
+						if (len == -1) {
+							break;
+						}
+						out.write(buf, 0, len);
+						bytesRead += len;
+
+						final long num = bytesRead;
+
+						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+							if(progressCallback != null) // check for null
+								mCurrentTask.callbackHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										progressCallback.onProgress(num);
+									}
+								});
+						}
+
+						if(isInterrupted()) // stop reading if thread got a pending interrupt
+							break;
+					}
+					in.close();
+					out.close();
+
+					if(mDoLog) Log.i(TAG, "getFile Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
+
+					return filename;
+				}
+			}
+			catch (Throwable e){
+				if(mDoLog) Log.e(TAG, "getFile error for query " + url, e);
+				status = SC_ERR;
+			}finally{
+				httpGet.abort();
+				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
+			}
+
+			return null;
+
+		}
+
 
 
 		private JSONObject getJSON(String url)

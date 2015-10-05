@@ -18,19 +18,19 @@ import org.json.JSONObject;
 public interface RESTfulInterface {
 
 	interface OnGetStringCompleteListener {
-		public void onComplete(String returned);
-	};
+		void onComplete(String returned);
+	}
 
 	interface OnGetRawDataCompleteListener {
-		public void onComplete(byte[] returned);
-	};
+		void onComplete(byte[] returned);
+	}
 
 	interface OnGetJSONCompleteListener {
-		public void onComplete(JSONObject returned);
+		void onComplete(JSONObject returned);
 	}
 
 	interface OnPostJSONCompleteListener {
-		public void onComplete(String returned);
+		void onComplete(String returned);
 	}
 
 	/**
@@ -39,11 +39,19 @@ public interface RESTfulInterface {
 	 *
 	 */
 	interface OnPostMultipartProgressListener {
-		public void onProgress(long sentBytes);
+		void onProgress(long sentBytes);
 	}
 
 	interface OnPostMultipartCompleteListener {
-		public void onComplete(String returned);
+		void onComplete(String returned);
+	}
+
+	interface OnGetFileProgressListener {
+		void onProgress(long sentBytes);
+	}
+
+	interface OnGetFileCompleteListener {
+		void onComplete(String returned);
 	}
 
 }
