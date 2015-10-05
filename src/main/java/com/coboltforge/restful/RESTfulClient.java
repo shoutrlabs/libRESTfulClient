@@ -14,6 +14,7 @@ package com.coboltforge.restful;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -29,6 +30,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -44,6 +46,7 @@ import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.net.http.AndroidHttpClient;
 import android.os.Handler;
 import android.util.Log;
 
@@ -277,6 +280,28 @@ public class RESTfulClient  {
 		} catch (Exception e) {
 			return url;
 		}
+	}
+
+
+	/**
+	 * Get size of remote file via HEAD request. *Not* threaded!
+	 * @param url
+	 * @return
+	 */
+	public static long getSize(String url) {
+
+		AndroidHttpClient httpCl = AndroidHttpClient.newInstance(url);
+
+		HttpResponse response = null;
+		try {
+			response = httpCl.execute(new HttpHead(url));
+			return response.getEntity().getContentLength();
+		} catch (IOException e) {
+			return -1;
+		} finally {
+			httpCl.close();
+		}
+
 	}
 
 

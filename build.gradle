@@ -6,7 +6,7 @@ android {
     useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
-        minSdkVersion 5
+        minSdkVersion 8
         targetSdkVersion 13
     }
 
