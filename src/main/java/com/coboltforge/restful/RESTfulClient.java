@@ -286,7 +286,7 @@ public class RESTfulClient  {
 	/**
 	 * Get size of remote file via HEAD request. *Not* threaded!
 	 * @param url
-	 * @return
+	 * @return Size of remote file or -1 on error.
 	 */
 	public static long getSize(String url) {
 
