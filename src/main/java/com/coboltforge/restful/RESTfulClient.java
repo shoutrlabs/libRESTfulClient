@@ -14,7 +14,6 @@ package com.coboltforge.restful;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -768,9 +767,6 @@ public class RESTfulClient  {
 					long contentLength = entity.getContentLength();
 
 					long bytesRead = 0;
-
-					// make sure intermediate dirs exist
-					new File(filename).mkdirs();
 
 					FileOutputStream out = new FileOutputStream(filename);
 
