@@ -47,7 +47,7 @@ public interface RESTfulInterface {
 	}
 
 	interface OnGetFileProgressListener {
-		void onProgress(long sentBytes);
+		void onProgress(long rcvdBytes, long totalRcvdBytes);
 	}
 
 	interface OnGetFileCompleteListener {

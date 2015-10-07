@@ -791,27 +791,27 @@ public class RESTfulClient  {
 					// Now that the InputStream is open, get the content length
 					long contentLength = entity.getContentLength();
 
-					long bytesRead = 0;
+					long totalBytesRead = 0;
 
 					FileOutputStream out = new FileOutputStream(filename);
 
 					byte[] buf = new byte[8192];
 					while (true) {
-						int len = in.read(buf);
-						if (len == -1) {
+						final int readBytes = in.read(buf);
+						if (readBytes == -1) {
 							break;
 						}
-						out.write(buf, 0, len);
-						bytesRead += len;
+						out.write(buf, 0, readBytes);
+						totalBytesRead += readBytes;
 
-						final long num = bytesRead;
+						final long total = totalBytesRead;
 
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							if(progressCallback != null) // check for null
 								mCurrentTask.callbackHandler.post(new Runnable() {
 									@Override
 									public void run() {
-										progressCallback.onProgress(num);
+										progressCallback.onProgress(readBytes, total);
 									}
 								});
 						}
@@ -822,7 +822,7 @@ public class RESTfulClient  {
 					in.close();
 					out.close();
 
-					if(mDoLog) Log.i(TAG, "getFile Success for query '" +url + "' read " + bytesRead + " of " + contentLength);
+					if(mDoLog) Log.i(TAG, "getFile Success for query '" +url + "' read " + totalBytesRead + " of " + contentLength);
 
 					return filename;
 				}
