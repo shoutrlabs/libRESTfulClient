@@ -54,4 +54,8 @@ public interface RESTfulInterface {
 		void onComplete(String returned);
 	}
 
+	interface OnGetSizeCompleteListener {
+		void onComplete(long accumulateSize);
+	}
+
 }

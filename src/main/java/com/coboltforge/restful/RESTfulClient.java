@@ -15,12 +15,12 @@ package com.coboltforge.restful;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +38,7 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.Header;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -47,7 +48,6 @@ import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
 import android.content.Context;
-import android.net.http.AndroidHttpClient;
 import android.os.Handler;
 import android.util.Log;
 
@@ -184,6 +184,25 @@ public class RESTfulClient  {
 	}
 
 
+	/**
+	 * Get size of remote file(s) via HEAD request.
+	 * @param urls
+	 * @return Size of remote file or -1 on error.
+	 */
+	public synchronized void getSize(Handler h, ArrayList<String> urls, RESTfulInterface.OnGetSizeCompleteListener completeCallback) {
+
+		if(mDoLog) Log.d(TAG, "queueing GETSIZE");
+
+		CommThread.Task gs = mCommThread.new Task(CommThread.Task.MODE_GETSIZE);
+		gs.in_urllist= urls;
+		gs.callbackHandler = h;
+		gs.getSizeCompleteCallback = completeCallback;
+		mCommThread.addTask(gs);
+
+	}
+
+
+
 
 	/**
 	 * get JSON from url in a thread, callback will be executed on the main thread.
@@ -308,26 +327,7 @@ public class RESTfulClient  {
 	}
 
 
-	/**
-	 * Get size of remote file via HEAD request. *Not* threaded!
-	 * @param url
-	 * @return Size of remote file or -1 on error.
-	 */
-	public static long getSize(String url) {
 
-		AndroidHttpClient httpCl = AndroidHttpClient.newInstance(url);
-
-		HttpResponse response = null;
-		try {
-			response = httpCl.execute(new HttpHead(url));
-			return response.getEntity().getContentLength();
-		} catch (IOException e) {
-			return -1;
-		} finally {
-			httpCl.close();
-		}
-
-	}
 
 
 	private class CommThread extends Thread {
@@ -343,14 +343,17 @@ public class RESTfulClient  {
 			public final static int MODE_GETRAWDATA = 3;
 			public final static int MODE_POSTMULTIPART = 4;
 			public final static int MODE_GETFILE = 5;
+			public final static int MODE_GETSIZE = 6;
 			public final static int QUIT = 666;
 
 
 			// data, acted upon according to mode
 			private final int mode;
 			private String in_url;
+			private ArrayList<String> in_urllist;
 			private String out_string;
 			private byte[] out_ba;
+			private long out_size;
 			private String out_filename;
 			private JSONObject out_json;
 			private JSONObject in_json; // for POST JSON
@@ -366,6 +369,7 @@ public class RESTfulClient  {
 			private RESTfulInterface.OnPostMultipartCompleteListener postMultipartCompleteCallback;
 			private RESTfulInterface.OnGetFileProgressListener getFileProgressCallback;
 			private RESTfulInterface.OnGetFileCompleteListener getFileCompleteCallback;
+			private RESTfulInterface.OnGetSizeCompleteListener getSizeCompleteCallback;
 
 
 			public Task(int mode) {
@@ -554,6 +558,27 @@ public class RESTfulClient  {
 											}
 										}
 									});
+							}
+							break;
+
+						case Task.MODE_GETSIZE:
+							if(mDoLog) Log.d(TAG, "got GETSIZE ");
+							printCookies();
+							mCurrentTask.out_size = getSize(mCurrentTask.in_urllist);
+							// currentTask could be something other at time of runnable execution
+							final RESTfulInterface.OnGetSizeCompleteListener gszc = mCurrentTask.getSizeCompleteCallback;
+							final long gsl = mCurrentTask.out_size;
+							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+								mCurrentTask.callbackHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										try {
+											gszc.onComplete(gsl);
+										}
+										catch(NullPointerException e) {
+										}
+									}
+								});
 							}
 							break;
 
@@ -814,6 +839,55 @@ public class RESTfulClient  {
 
 		}
 
+
+		private long getSize(ArrayList<String> urlList) {
+
+			long size=0;
+
+			status = SC_OK;
+
+			for(String url : urlList) {
+
+				url = sanitizeUrl(url);
+
+				HttpHead httpHead = new HttpHead(url);
+
+				try {
+					HttpResponse response = mHttpClient.execute(httpHead);
+
+					if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+						// we assume that the response body contains the error message
+						HttpEntity entity = response.getEntity();
+						if(entity != null) {
+							ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+							response.getEntity().writeTo(ostream);
+							if(mDoLog) Log.e(TAG, "getSize Error: " + ostream.toString());
+						}
+						else
+						if(mDoLog) Log.e(TAG, "getSize Error: Server did not give reason");
+
+						return -1;
+					}
+
+					if(mDoLog) Log.i(TAG, "getSize Success for query " + url);
+
+					size += Long.parseLong(response.getFirstHeader("Content-Length").getValue());
+
+				}
+				catch (Throwable e){
+					if(mDoLog) Log.e(TAG, "getSize error for query " + url, e);
+					status = SC_ERR;
+				}finally{
+					httpHead.abort();
+					mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
+				}
+
+			}
+
+
+			return size;
+
+		}
 
 
 		private JSONObject getJSON(String url)
