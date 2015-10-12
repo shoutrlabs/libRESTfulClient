@@ -66,6 +66,10 @@ public class RESTfulClient  {
 
 	private int status = SC_OK;
 
+	public RESTfulClient(boolean doLog) {
+		this(null, 0, null, doLog);
+	}
+
 	public RESTfulClient () {
 		this(null, 0, null, true);
 	}
