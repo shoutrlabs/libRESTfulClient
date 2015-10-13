@@ -875,7 +875,7 @@ public class RESTfulClient  {
 						if(entity != null) {
 							ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 							response.getEntity().writeTo(ostream);
-							if(mDoLog) Log.e(TAG, "getSize Error: " + ostream.toString());
+							if(mDoLog) Log.e(TAG, "getSize Error for query " +url + ": " + ostream.toString());
 						}
 						else
 						if(mDoLog) Log.e(TAG, "getSize Error: Server did not give reason");
