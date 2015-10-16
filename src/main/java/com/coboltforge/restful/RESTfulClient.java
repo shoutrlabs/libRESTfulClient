@@ -319,13 +319,13 @@ public class RESTfulClient  {
 	}
 
 	/**
-	 * All characters except letters ('a'..'z', 'A'..'Z') and numbers ('0'..'9') and characters '.', '-', '*', '_' are converted into their hexadecimal value prepended by '%'. For example: '#' -> %23. In addition, spaces are substituted by '+'.
+	 * All characters except letters ('a'..'z', 'A'..'Z') and numbers ('0'..'9') and characters '.', '-', '*', '_' are converted into their hexadecimal value prepended by '%'. For example: '#' -> %23. In addition, spaces are substituted by '%20'.
 	 * @param url
 	 * @return
 	 */
 	public static String urlEncode(String url) {
 		try {
-			return URLEncoder.encode(url, "UTF-8").trim();
+			return URLEncoder.encode(url, "UTF-8").trim().replace("+", "%20");
 		} catch (Exception e) {
 			return url;
 		}
