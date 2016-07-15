@@ -12,16 +12,13 @@
         <option name="SELECTED_TEST_ARTIFACT" value="_android_test_" />
         <option name="ASSEMBLE_TASK_NAME" value="assembleDebug" />
         <option name="COMPILE_JAVA_TASK_NAME" value="compileDebugSources" />
-        <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleDebugAndroidTest" />
-        <option name="COMPILE_JAVA_TEST_TASK_NAME" value="compileDebugAndroidTestSources" />
         <afterSyncTasks>
-          <task>generateDebugAndroidTestSources</task>
           <task>generateDebugSources</task>
         </afterSyncTasks>
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
         <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
-        <option name="RES_FOLDERS_RELATIVE_PATH" value="file://$MODULE_DIR$/../../librestfulclient/src/main/res" />
+        <option name="RES_FOLDERS_RELATIVE_PATH" value="" />
         <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
         <option name="LIBRARY_PROJECT" value="true" />
       </configuration>
@@ -29,7 +26,7 @@
   </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/classes/debug" />
-    <output-test url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/classes/androidTest/debug" />
+    <output-test url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/classes/test/debug" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/../../librestfulclient">
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/build/generated/source/r/debug" isTestSource="false" generated="true" />
@@ -51,6 +48,15 @@
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/debug/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/debug/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/debug/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/debug/shaders" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/res" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/assets" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/testDebug/shaders" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/assets" type="java-resource" />
@@ -58,6 +64,15 @@
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/rs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/main/shaders" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/res" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/resources" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/assets" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/aidl" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/jni" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/test/shaders" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/res" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/assets" type="java-test-resource" />
@@ -65,25 +80,21 @@
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/rs" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../librestfulclient/src/androidTest/shaders" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/assets" />
+      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/blame" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/bundles" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/classes" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/coverage-instrumented-classes" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/dependency-cache" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/dex" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/dex-cache" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/incremental" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/jacoco" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/javaResources" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/libs" />
+      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/incremental-safeguard" />
+      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/jniLibs" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/lint" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/manifests" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/ndk" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/pre-dexed" />
-      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/proguard" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/res" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/rs" />
+      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/shaders" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/symbols" />
+      <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/intermediates/transforms" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/../../librestfulclient/build/tmp" />
     </content>
