@@ -46,8 +46,15 @@ public interface RESTfulInterface {
 		void onComplete(String returned);
 	}
 
+
 	interface OnGetFileProgressListener {
-		void onProgress(long rcvdBytes, long totalRcvdBytes);
+		/**
+		 * Returns the file download progress.
+		 * @param rcvdBytes Number of bytes received since the last onProgress call.
+		 * @param totalRcvdBytes Number of bytes received since start of downloading this file.
+		 * @param expectedBytes Length of file.
+		 */
+		void onProgress(long rcvdBytes, long totalRcvdBytes, long expectedBytes);
 	}
 
 	interface OnGetFileCompleteListener {

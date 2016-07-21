@@ -794,7 +794,7 @@ public class RESTfulClient  {
 					InputStream in = entity.getContent();
 
 					// Now that the InputStream is open, get the content length
-					long contentLength = entity.getContentLength();
+					final long contentLength = entity.getContentLength();
 
 					long totalBytesRead = 0;
 
@@ -825,7 +825,7 @@ public class RESTfulClient  {
 								mCurrentTask.callbackHandler.post(new Runnable() {
 									@Override
 									public void run() {
-										progressCallback.onProgress(readBytes, total);
+										progressCallback.onProgress(readBytes, total, contentLength);
 									}
 								});
 						}
