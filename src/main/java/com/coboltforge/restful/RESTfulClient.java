@@ -31,6 +31,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
@@ -39,11 +40,12 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.Header;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
@@ -80,6 +82,7 @@ public class RESTfulClient  {
 				new UsernamePasswordCredentials(user, pass));
 	}
 
+	// this constructor is called by any other constructor
 	public RESTfulClient (Context ctx, int bksResource, String pass, boolean doLog) {
 
 		mDoLog = doLog;
@@ -99,12 +102,24 @@ public class RESTfulClient  {
 			mHttpClient = new DefaultHttpClient(cm, params);
 		}
 
+		// don't forget to create http context
+		resetSession();
+
 		mCommThread = new CommThread();
 		mCommThread.start();
 	}
 
+	/**
+	 * Resets all http session properties to default values.
+	 * In particular, cookies are cleared.
+	 */
+	public synchronized void resetSession() {
 
+		// Create a new cookie store
+		CookieStore cookieStore = new BasicCookieStore();
+		mHttpClient.setCookieStore(cookieStore);
 
+	}
 
 
 	public synchronized int getStatus()
@@ -120,6 +135,27 @@ public class RESTfulClient  {
 		}
 		catch(NullPointerException e) {
 			return null;
+		}
+	}
+
+	/**
+	 * Adds a cookie to this RESTfulClient
+	 * @param name
+	 * @param value
+     * @return
+     */
+	public synchronized boolean setCookie(String domain, String name, String value) {
+		try {
+
+			BasicClientCookie c = new BasicClientCookie(name, value);
+			c.setDomain(domain);
+			c.setPath("/");
+			mHttpClient.getCookieStore().addCookie(c);
+
+			return true;
+		}
+		catch(NullPointerException e) {
+			return false;
 		}
 	}
 
@@ -604,11 +640,16 @@ public class RESTfulClient  {
 
 		private void printCookies() {
 			List<Cookie> cookies = getCookies();
-			if (cookies.isEmpty())
-				if(mDoLog) Log.d(TAG, "No Cookies");
+
+			if (cookies.isEmpty()) {
+				if (mDoLog)
+					Log.d(TAG, "No Cookies");
+			}
 			else
-				for (Cookie c : cookies)
-					if(mDoLog) Log.d(TAG, "Cookie: " + c.toString());
+				for (Cookie c : cookies) {
+					if (mDoLog)
+						Log.d(TAG, "Cookie " + c.toString());
+				}
 		}
 
 		public final ConcurrentLinkedQueue<Task> getQueue() {
