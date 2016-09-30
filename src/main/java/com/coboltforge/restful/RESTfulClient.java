@@ -47,6 +47,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.json.JSONObject;
 
@@ -87,8 +88,11 @@ public class RESTfulClient  {
 
 		mDoLog = doLog;
 
+		HttpParams httpParams = new BasicHttpParams();
+		HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
+		HttpConnectionParams.setSoTimeout(httpParams, 10000);
+
 		if(ctx == null || bksResource == 0 || pass == null) {
-			HttpParams httpParams = new BasicHttpParams();
 			mHttpClient = new DefaultHttpClient(httpParams);
 		}
 		else {
@@ -97,9 +101,8 @@ public class RESTfulClient  {
 			schemeRegistry.register(new Scheme("https", createAdditionalCertsSSLSocketFactory(ctx, bksResource, pass), 443));
 
 			// create connection manager using scheme, we use ThreadSafeClientConnManager
-			final HttpParams params = new BasicHttpParams();
-			final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params,schemeRegistry);
-			mHttpClient = new DefaultHttpClient(cm, params);
+			final ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(httpParams,schemeRegistry);
+			mHttpClient = new DefaultHttpClient(cm, httpParams);
 		}
 
 		// don't forget to create http context
