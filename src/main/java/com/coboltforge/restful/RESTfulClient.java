@@ -326,6 +326,17 @@ public class RESTfulClient  {
 	}
 
 
+	/**
+	 * Quit after all scheduled operations have been handled
+	 */
+	public synchronized void quit() {
+
+		if(mDoLog) Log.d(TAG, "queueing QUIT");
+
+		CommThread.Task q = mCommThread.new Task(CommThread.Task.QUIT);
+		mCommThread.addTask(q);
+	}
+
 	public synchronized void cancelAll() {
 
 		if(mDoLog) Log.d(TAG, "Cancelling all operations");
