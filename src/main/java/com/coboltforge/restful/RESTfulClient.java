@@ -1,7 +1,7 @@
-/**
+/*
  * A threaded REST client implementation.
  *
- * @author Christian Beier
+ * author Christian Beier
  *
  * Copyright (C) 2012 CoboltForge
  *
