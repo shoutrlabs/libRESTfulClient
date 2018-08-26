@@ -731,9 +731,6 @@ public class RESTfulClient  {
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getString error for query " + url, e);
 				status = SC_ERR;
-			}finally{
-				httpGet.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -808,9 +805,6 @@ public class RESTfulClient  {
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getRawData error for query " + url, e);
 				status = SC_ERR;
-			}finally{
-				httpGet.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -899,9 +893,6 @@ public class RESTfulClient  {
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getFile error for query " + url, e);
 				status = SC_ERR;
-			}finally{
-				httpGet.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -946,9 +937,6 @@ public class RESTfulClient  {
 				catch (Throwable e){
 					if(mDoLog) Log.e(TAG, "getSize error for query " + url, e);
 					status = SC_ERR;
-				}finally{
-					httpHead.abort();
-					mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 				}
 
 			}
@@ -1008,9 +996,6 @@ public class RESTfulClient  {
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getJSON error for query " + url, e);
 				status = SC_ERR;
-			}finally{
-				httpGet.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -1053,10 +1038,6 @@ public class RESTfulClient  {
 			catch (Throwable e) {
 				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e);
-			}
-			finally {
-				httpPost.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
@@ -1115,10 +1096,6 @@ public class RESTfulClient  {
 			catch (Throwable e) {
 				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postMultipart error to " + url, e);
-			}
-			finally {
-				httpPost.abort();
-				mHttpClient.getConnectionManager().closeIdleConnections(1, TimeUnit.MILLISECONDS);
 			}
 
 			return null;
