@@ -347,6 +347,13 @@ public class RESTfulClient  {
 			mCommThread.mCurrentTask.postJSONCallback = null;
 			mCommThread.mCurrentTask.getJSONCallback = null;
 			mCommThread.mCurrentTask.getStringCallback = null;
+			mCommThread.mCurrentTask.getRawDataCallback = null;
+			mCommThread.mCurrentTask.postMultipartProgressCallback = null;
+			mCommThread.mCurrentTask.postMultipartCompleteCallback = null;
+			mCommThread.mCurrentTask.getFileProgressCallback = null;
+			mCommThread.mCurrentTask.getFileCompleteCallback = null;
+			mCommThread.mCurrentTask.getSizeCompleteCallback = null;
+
 		}
 		catch(NullPointerException e) {
 		}
