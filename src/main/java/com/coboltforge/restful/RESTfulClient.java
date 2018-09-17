@@ -396,16 +396,16 @@ public class RESTfulClient  {
 		private static final String TAG = "RESTfulCommThread";
 		private Task mCurrentTask;
 
-		public class Task {
+		class Task {
 			// constants
-			public final static int MODE_GETSTRING = 0;
-			public final static int MODE_GETJSON = 1;
-			public final static int MODE_POSTJSON = 2;
-			public final static int MODE_GETRAWDATA = 3;
-			public final static int MODE_POSTMULTIPART = 4;
-			public final static int MODE_GETFILE = 5;
-			public final static int MODE_GETSIZE = 6;
-			public final static int QUIT = 666;
+			final static int MODE_GETSTRING = 0;
+			final static int MODE_GETJSON = 1;
+			final static int MODE_POSTJSON = 2;
+			final static int MODE_GETRAWDATA = 3;
+			final static int MODE_POSTMULTIPART = 4;
+			final static int MODE_GETFILE = 5;
+			final static int MODE_GETSIZE = 6;
+			final static int QUIT = 666;
 
 
 			// data, acted upon according to mode
@@ -442,7 +442,7 @@ public class RESTfulClient  {
 
 
 
-		public CommThread () {
+		CommThread() {
 		}
 
 
@@ -679,11 +679,11 @@ public class RESTfulClient  {
 				}
 		}
 
-		public final ConcurrentLinkedQueue<Task> getQueue() {
+		final ConcurrentLinkedQueue<Task> getQueue() {
 			return mTaskQueue;
 		}
 
-		public void addTask(Task t) {
+		void addTask(Task t) {
 			mTaskQueue.add(t);
 			synchronized (mTaskQueue) {
 				mTaskQueue.notify();
