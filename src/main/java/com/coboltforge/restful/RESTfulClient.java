@@ -498,6 +498,7 @@ public class RESTfulClient  {
 										gjc.onComplete(gjjo);
 									}
 									catch(NullPointerException e) {
+										//unused
 									}
 								}
 							});
@@ -519,6 +520,7 @@ public class RESTfulClient  {
 										gsc.onComplete(gss);
 									}
 									catch(NullPointerException e) {
+										//unused
 									}
 								}
 							});
@@ -540,6 +542,7 @@ public class RESTfulClient  {
 										grdc.onComplete(grdba);
 									}
 									catch(NullPointerException e) {
+										//unused
 									}
 								}
 							});
@@ -561,6 +564,7 @@ public class RESTfulClient  {
 										pjc.onComplete(pjs);
 									}
 									catch(NullPointerException e) {
+										//unused
 									}
 								}
 							});
@@ -589,6 +593,7 @@ public class RESTfulClient  {
 											pmc.onComplete(pmps);
 										}
 										catch(NullPointerException e) {
+											//unused
 										}
 									}
 								});
@@ -616,6 +621,7 @@ public class RESTfulClient  {
 												gfc.onComplete(gfcs);
 											}
 											catch(NullPointerException e) {
+												//unused
 											}
 										}
 									});
@@ -637,6 +643,7 @@ public class RESTfulClient  {
 											gszc.onComplete(gsl);
 										}
 										catch(NullPointerException e) {
+											//unused
 										}
 									}
 								});
