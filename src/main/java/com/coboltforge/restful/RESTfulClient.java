@@ -52,6 +52,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 
@@ -353,7 +354,8 @@ public class RESTfulClient  {
 			mCommThread.mCurrentTask.getFileProgressCallback = null;
 			mCommThread.mCurrentTask.getFileCompleteCallback = null;
 			mCommThread.mCurrentTask.getSizeCompleteCallback = null;
-
+            // remove maybe-posted runnables we posted
+            mCommThread.mCurrentTask.callbackHandler.removeCallbacksAndMessages(RESTfulClient.this);
 		}
 		catch(NullPointerException e) {
 		}
@@ -441,9 +443,11 @@ public class RESTfulClient  {
 		private ConcurrentLinkedQueue<Task> mTaskQueue = new ConcurrentLinkedQueue<Task>(); //BlockingQueue instead?
 
 
-
-		CommThread() {
-		}
+        Message taggedMsgFromCurrentTaskHandlerAndRunnable(Runnable r) {
+            Message m = Message.obtain(mCurrentTask.callbackHandler, r);
+            m.obj = RESTfulClient.this;
+            return m;
+        }
 
 
 		public void run() {
@@ -491,7 +495,7 @@ public class RESTfulClient  {
 						final RESTfulInterface.OnGetJSONCompleteListener gjc = mCurrentTask.getJSONCallback;
 						final JSONObject gjjo = mCurrentTask.out_json;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							mCurrentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 								@Override
 								public void run() {
 									try{
@@ -501,7 +505,7 @@ public class RESTfulClient  {
 										//unused
 									}
 								}
-							});
+							}));
 						}
 						break;
 
@@ -513,7 +517,7 @@ public class RESTfulClient  {
 						final RESTfulInterface.OnGetStringCompleteListener gsc = mCurrentTask.getStringCallback;
 						final String gss = mCurrentTask.out_string;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							mCurrentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 								@Override
 								public void run() {
 									try {
@@ -523,7 +527,7 @@ public class RESTfulClient  {
 										//unused
 									}
 								}
-							});
+							}));
 						}
 						break;
 
@@ -535,7 +539,7 @@ public class RESTfulClient  {
 						final RESTfulInterface.OnGetRawDataCompleteListener grdc = mCurrentTask.getRawDataCallback;
 						final byte[] grdba = mCurrentTask.out_ba;
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							mCurrentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 								@Override
 								public void run() {
 									try{
@@ -545,7 +549,7 @@ public class RESTfulClient  {
 										//unused
 									}
 								}
-							});
+							}));
 						}
 						break;
 
@@ -557,7 +561,7 @@ public class RESTfulClient  {
 							// currentTask could be something other at time of runnable execution
 							final RESTfulInterface.OnPostJSONCompleteListener pjc = mCurrentTask.postJSONCallback;
 							final String pjs = mCurrentTask.out_string;
-							mCurrentTask.callbackHandler.post(new Runnable() {
+							mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 								@Override
 								public void run() {
 									try {
@@ -567,7 +571,7 @@ public class RESTfulClient  {
 										//unused
 									}
 								}
-							});
+							}));
 						}
 						break;
 
@@ -586,7 +590,7 @@ public class RESTfulClient  {
 							final RESTfulInterface.OnPostMultipartCompleteListener pmc = mCurrentTask.postMultipartCompleteCallback;
 							final String pmps = mCurrentTask.out_string;
 							if(pmc != null) // check for null
-								mCurrentTask.callbackHandler.post(new Runnable() {
+								mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 									@Override
 									public void run() {
 										try {
@@ -596,7 +600,7 @@ public class RESTfulClient  {
 											//unused
 										}
 									}
-								});
+								}));
 						}
 						break;
 
@@ -614,7 +618,7 @@ public class RESTfulClient  {
 								final RESTfulInterface.OnGetFileCompleteListener gfc = mCurrentTask.getFileCompleteCallback;
 								final String gfcs = mCurrentTask.out_string;
 								if(gfc != null) // check for null
-									mCurrentTask.callbackHandler.post(new Runnable() {
+									mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 										@Override
 										public void run() {
 											try {
@@ -624,7 +628,7 @@ public class RESTfulClient  {
 												//unused
 											}
 										}
-									});
+									}));
 							}
 							break;
 
@@ -636,7 +640,7 @@ public class RESTfulClient  {
 							final RESTfulInterface.OnGetSizeCompleteListener gszc = mCurrentTask.getSizeCompleteCallback;
 							final long gsl = mCurrentTask.out_size;
 							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-								mCurrentTask.callbackHandler.post(new Runnable() {
+								mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 									@Override
 									public void run() {
 										try {
@@ -646,7 +650,7 @@ public class RESTfulClient  {
 											//unused
 										}
 									}
-								});
+								}));
 							}
 							break;
 
@@ -884,12 +888,12 @@ public class RESTfulClient  {
 
 						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 							if(progressCallback != null) // check for null
-								mCurrentTask.callbackHandler.post(new Runnable() {
+								mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 									@Override
 									public void run() {
 										progressCallback.onProgress(readBytes, total, contentLength);
 									}
-								});
+								}));
 						}
 
 						if(isInterrupted()) // stop reading if thread got a pending interrupt
@@ -1070,12 +1074,12 @@ public class RESTfulClient  {
 
 							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
 								if(progressCallback != null) // check for null
-									mCurrentTask.callbackHandler.post(new Runnable() {
+									mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
 										@Override
 										public void run() {
 											progressCallback.onProgress(num);
 										}
-									});
+									}));
 							}
 						}
 					});
