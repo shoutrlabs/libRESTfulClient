@@ -64,11 +64,6 @@ public class RESTfulClient  {
 
 	private boolean mDoLog;
 
-	public static final int SC_OK = 42;
-	public static final int SC_ERR = 666;
-
-	private int status = SC_OK;
-
 	public RESTfulClient(boolean doLog) {
 		this(null, 0, null, doLog);
 	}
@@ -122,12 +117,6 @@ public class RESTfulClient  {
 		CookieStore cookieStore = new BasicCookieStore();
 		mHttpClient.setCookieStore(cookieStore);
 
-	}
-
-
-	public synchronized int getStatus()
-	{
-		return status;
 	}
 
 
@@ -696,8 +685,6 @@ public class RESTfulClient  {
 
 		private String getString(String url)
 		{
-			status = SC_OK;
-
 			if(mDoLog) Log.i(TAG, "getString on " +url);
 
 			HttpGet httpGet = new HttpGet(url);
@@ -744,7 +731,6 @@ public class RESTfulClient  {
 			}
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getString error for query " + url, e);
-				status = SC_ERR;
 			}
 
 			return null;
@@ -752,8 +738,6 @@ public class RESTfulClient  {
 
 
 		private byte[] getRawData(String url) {
-
-			status = SC_OK;
 
 			if(mDoLog) Log.i(TAG, "getRawData on " +url);
 
@@ -818,7 +802,6 @@ public class RESTfulClient  {
 			}
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getRawData error for query " + url, e);
-				status = SC_ERR;
 			}
 
 			return null;
@@ -827,8 +810,6 @@ public class RESTfulClient  {
 
 
 		private String getFile(String url, String filename, final RESTfulInterface.OnGetFileProgressListener progressCallback) {
-
-			status = SC_OK;
 
 			if(mDoLog) Log.i(TAG, "getFile on " +url);
 
@@ -908,7 +889,6 @@ public class RESTfulClient  {
 				// delete partially downloaded file. we might change semantics in the future and indicate partial download in the complete callback
 				new File(filename).delete();
 				if(mDoLog) Log.e(TAG, "getFile error for query " + url, e);
-				status = SC_ERR;
 			}
 
 			return null;
@@ -919,8 +899,6 @@ public class RESTfulClient  {
 		private long getSize(ArrayList<String> urlList) {
 
 			long size=0;
-
-			status = SC_OK;
 
 			for(String url : urlList) {
 
@@ -952,7 +930,7 @@ public class RESTfulClient  {
 				}
 				catch (Throwable e){
 					if(mDoLog) Log.e(TAG, "getSize error for query " + url, e);
-					status = SC_ERR;
+                    return -1;
 				}
 
 			}
@@ -965,8 +943,6 @@ public class RESTfulClient  {
 
 		private JSONObject getJSON(String url)
 		{
-			status = SC_OK;
-
 			HttpGet httpGet = new HttpGet(url);
 
 			try {
@@ -1011,7 +987,6 @@ public class RESTfulClient  {
 			}
 			catch (Throwable e){
 				if(mDoLog) Log.e(TAG, "getJSON error for query " + url, e);
-				status = SC_ERR;
 			}
 
 			return null;
@@ -1020,7 +995,6 @@ public class RESTfulClient  {
 
 		private String postJSON(String url, JSONObject data)
 		{
-			status = SC_OK;
 			HttpPost httpPost = new HttpPost(url);
 
 			StringEntity se = null;
@@ -1028,7 +1002,7 @@ public class RESTfulClient  {
 				se = new StringEntity(data.toString());
 			} catch (UnsupportedEncodingException e1) {
 				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e1);
-				status = SC_ERR;
+				return null;
 			}
 			httpPost.setEntity(se);
 			httpPost.setHeader("Accept", "application/json");
@@ -1052,7 +1026,6 @@ public class RESTfulClient  {
 					return answer;
 			}
 			catch (Throwable e) {
-				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postJSON error to " + url, e);
 			}
 
@@ -1061,7 +1034,6 @@ public class RESTfulClient  {
 
 
 		private String postMultipart(String url, InputStream[] inStreams, String[] mimeTypes, String[] filenames, final RESTfulInterface.OnPostMultipartProgressListener progressCallback) {
-			status = SC_OK;
 			HttpPost httpPost = new HttpPost(url);
 
 
@@ -1110,7 +1082,6 @@ public class RESTfulClient  {
 					return ostream.toString();
 			}
 			catch (Throwable e) {
-				status = SC_ERR;
 				if(mDoLog) Log.e(TAG, "postMultipart error to " + url, e);
 			}
 
