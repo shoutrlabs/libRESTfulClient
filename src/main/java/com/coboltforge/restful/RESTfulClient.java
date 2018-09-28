@@ -897,7 +897,7 @@ public class RESTfulClient  {
 						}
 
 						if(isInterrupted()) // stop reading if thread got a pending interrupt
-							break;
+							throw new InterruptedException();
 					}
 					in.close();
 					out.close();
@@ -908,6 +908,8 @@ public class RESTfulClient  {
 				}
 			}
 			catch (Throwable e){
+				// delete partially downloaded file. we might change semantics in the future and indicate partial download in the complete callback
+				new File(filename).delete();
 				if(mDoLog) Log.e(TAG, "getFile error for query " + url, e);
 				status = SC_ERR;
 			}
