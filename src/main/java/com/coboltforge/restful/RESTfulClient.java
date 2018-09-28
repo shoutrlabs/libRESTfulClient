@@ -459,7 +459,7 @@ public class RESTfulClient  {
 
                 synchronized (mTaskQueue) {
 
-                    mCurrentTask = mTaskQueue.peek();
+                    mCurrentTask = mTaskQueue.poll();
 
                     // if queue empty, wait and re-run loop
                     if (mCurrentTask == null) {
@@ -658,9 +658,6 @@ public class RESTfulClient  {
 				} catch (Exception e) {
 					//TODO tell caller
 				}
-
-				// done with this Task, remove from queue
-				mTaskQueue.poll();
 
 			}
 
