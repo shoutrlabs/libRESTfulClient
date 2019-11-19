@@ -4,7 +4,9 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <application>
+    <application
+        android:usesCleartextTraffic="true"
+        >
 
         <!-- https://developer.android.com/about/versions/pie/android-9.0-changes-28#apache-p -->
         <uses-library
