@@ -32,7 +32,7 @@
  * for details.
  *
  */
-package com.coboltforge.restful;
+package com.shoutrlabs.restful;
 
 import java.io.IOException;
 import java.net.Socket;

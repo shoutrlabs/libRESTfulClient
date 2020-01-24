@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.coboltforge.restful;
+package com.shoutrlabs.restful;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
