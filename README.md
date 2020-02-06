@@ -7,7 +7,7 @@ separate worker thread.
 
 To illustrate its genereal use, here is how to get a JSON object from a remote:
 
-```
+```java
 Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 RESTfulClient restlessClient = new RESTfulClient();
 
