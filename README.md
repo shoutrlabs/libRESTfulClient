@@ -40,7 +40,20 @@ Here's what one can do with libRESTfulClient in a rough overview:
  
 ... all in an async callback-based fashion.
 
+## Using it in one's app
 
+For the time being, libRESTfulClient code is simply built with the app code,
+so just clone the repository into your source tree (or add it as a submodule)
+and add libRESTfulClient as a dependency to your app module's build.gradle like
+this:
+
+```gradle
+dependencies {
+    ...
+    implementation project(':librestfulclient')
+}
+
+```
 
 
 
