@@ -8,7 +8,7 @@ separate worker thread.
 To illustrate its genereal use, here is how to get a JSON object from a remote:
 
 ```java
-Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+Handler mainThreadHandler = new Handler(Looper.getMainLooper()); // callbacks will be executed on main thread this way
 RESTfulClient restlessClient = new RESTfulClient();
 
 restlessClient.getJSON(mainThreadHandler, "https://example.io/api/users", new RESTfulInterface.OnGetJSONCompleteListener() {
