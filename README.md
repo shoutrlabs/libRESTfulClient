@@ -25,3 +25,22 @@ restlessClient.getJSON(mainThreadHandler, "https://example.io/api/users", new RE
 });
 
 ```
+
+## Functionality
+
+Here's what one can do with libRESTfulClient in a rough overview:
+
+* Downloading files with progress updates
+* Downloading and uploading JSON
+* Downloading raw binary data
+* Obtain entity sizes without downloading them
+* Downloading strings
+* Uploading all kings of data as Multipart data
+* Adding cookies to the calls
+ 
+... all in an async callback-based fashion.
+
+
+
+
+
