@@ -35,7 +35,7 @@ Here's what one can do with libRESTfulClient in a rough overview:
 * Downloading raw binary data
 * Obtain entity sizes without downloading them
 * Downloading strings
-* Uploading all kings of data as Multipart data
+* Uploading all kinds of data as Multipart data
 * Adding cookies to the calls
  
 ... all in an async callback-based fashion.
@@ -50,7 +50,7 @@ this:
 ```gradle
 dependencies {
     ...
-    implementation project(':librestfulclient')
+    implementation project(':libRESTfulClient')
 }
 
 ```
