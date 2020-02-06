@@ -55,5 +55,8 @@ dependencies {
 
 ```
 
+## License
+
+LibRESTfulClient is made available under [a 2-clause BSD license](LICENSE).
 
 
