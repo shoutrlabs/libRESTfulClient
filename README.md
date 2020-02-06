@@ -1,4 +1,4 @@
-# libRESTfulClient
+# libRESTfulClient - A Lightweight Async REST Client Library for Android
 
 This Java library for Android enables calling code to issue asynchronous REST
 calls and get notified about the results via callbacks. It is designed to be
