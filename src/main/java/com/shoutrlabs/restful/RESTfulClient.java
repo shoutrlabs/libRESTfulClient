@@ -37,6 +37,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.util.ArrayList;
@@ -834,84 +835,91 @@ public class RESTfulClient  {
 
 			HttpGet httpGet = new HttpGet(url);
 
-			try {
-				HttpResponse response = mHttpClient.execute(httpGet);
+			int retries = 0;
 
-				if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-					// we assume that the response body contains the error message
-					HttpEntity entity = response.getEntity();
-					if(entity != null) {
-						ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-						response.getEntity().writeTo(ostream);
-						if(mDoLog) Log.e(TAG, "getFile Error: " + ostream.toString());
+			while(true) {
+				try {
+					HttpResponse response = mHttpClient.execute(httpGet);
+
+					if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+						// we assume that the response body contains the error message
+						HttpEntity entity = response.getEntity();
+						if (entity != null) {
+							ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+							response.getEntity().writeTo(ostream);
+							if (mDoLog) Log.e(TAG, "getFile Error: " + ostream.toString());
+						} else if (mDoLog) Log.e(TAG, "getFile Error: Server did not give reason");
+
+						return null;
 					}
-					else
-					if(mDoLog) Log.e(TAG, "getFile Error: Server did not give reason");
 
+					HttpEntity entity = response.getEntity();
+					if (entity != null) {
+
+						InputStream in = entity.getContent();
+
+						// Now that the InputStream is open, get the content length
+						final long contentLength = entity.getContentLength();
+
+						long totalBytesRead = 0;
+
+						// make sure any leading paths exist
+						try {
+							new File(filename).getParentFile().mkdirs();
+						} catch (NullPointerException e) {
+							// so what
+						}
+
+
+						FileOutputStream out = new FileOutputStream(filename);
+
+						byte[] buf = new byte[8192];
+						while (true) {
+							final int readBytes = in.read(buf);
+							if (readBytes == -1) {
+								break;
+							}
+							out.write(buf, 0, readBytes);
+							totalBytesRead += readBytes;
+
+							final long total = totalBytesRead;
+
+							synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
+								if (progressCallback != null) // check for null
+									mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
+										@Override
+										public void run() {
+											progressCallback.onProgress(readBytes, total, contentLength);
+										}
+									}));
+							}
+
+							if (isInterrupted()) // stop reading if thread got a pending interrupt
+								throw new InterruptedException();
+						}
+						in.close();
+						out.close();
+
+						if (mDoLog)
+							Log.i(TAG, "getFile Success for query '" + url + "' read " + totalBytesRead + " of " + contentLength);
+
+						return filename;
+					}
+				} catch (SocketTimeoutException toe) {
+					Log.w(TAG, "getFile timeout for query " + url + " - " + retries + " retries so far");
+					if(retries++ > 3) {
+						// delete partially downloaded file. we might change semantics in the future and indicate partial download in the complete callback
+						new File(filename).delete();
+						if (mDoLog) Log.e(TAG, "getFile timeout retries exceeded for query " + url);
+						return null;
+					}
+				} catch (Throwable e) {
+					// delete partially downloaded file. we might change semantics in the future and indicate partial download in the complete callback
+					new File(filename).delete();
+					if (mDoLog) Log.e(TAG, "getFile error for query " + url, e);
 					return null;
 				}
-
-				HttpEntity entity = response.getEntity();
-				if (entity != null) {
-
-					InputStream in = entity.getContent();
-
-					// Now that the InputStream is open, get the content length
-					final long contentLength = entity.getContentLength();
-
-					long totalBytesRead = 0;
-
-					// make sure any leading paths exist
-				    try {
-						new File(filename).getParentFile().mkdirs();
-					}
-					catch(NullPointerException e) {
-						// so what
-					}
-
-
-					FileOutputStream out = new FileOutputStream(filename);
-
-					byte[] buf = new byte[8192];
-					while (true) {
-						final int readBytes = in.read(buf);
-						if (readBytes == -1) {
-							break;
-						}
-						out.write(buf, 0, readBytes);
-						totalBytesRead += readBytes;
-
-						final long total = totalBytesRead;
-
-						synchronized (RESTfulClient.this) { // do not interfere with cancelAll()
-							if(progressCallback != null) // check for null
-								mCurrentTask.callbackHandler.sendMessage(taggedMsgFromCurrentTaskHandlerAndRunnable(new Runnable() {
-									@Override
-									public void run() {
-										progressCallback.onProgress(readBytes, total, contentLength);
-									}
-								}));
-						}
-
-						if(isInterrupted()) // stop reading if thread got a pending interrupt
-							throw new InterruptedException();
-					}
-					in.close();
-					out.close();
-
-					if(mDoLog) Log.i(TAG, "getFile Success for query '" +url + "' read " + totalBytesRead + " of " + contentLength);
-
-					return filename;
-				}
 			}
-			catch (Throwable e){
-				// delete partially downloaded file. we might change semantics in the future and indicate partial download in the complete callback
-				new File(filename).delete();
-				if(mDoLog) Log.e(TAG, "getFile error for query " + url, e);
-			}
-
-			return null;
-
 		}
 
 
