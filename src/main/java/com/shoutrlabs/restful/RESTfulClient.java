@@ -104,6 +104,7 @@ public class RESTfulClient  {
 		HttpParams httpParams = new BasicHttpParams();
 		HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
 		HttpConnectionParams.setSoTimeout(httpParams, 10000);
+		HttpConnectionParams.setTcpNoDelay(httpParams,true);
 
 		if(ctx == null || bksResource == 0 || pass == null) {
 			mHttpClient = new DefaultHttpClient(httpParams);
